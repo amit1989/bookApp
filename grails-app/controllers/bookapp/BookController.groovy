@@ -168,7 +168,7 @@ class BookController {
 
         try {
 
-            User user = Book.getUserIDByToken(params.token);
+            UserTable user = Book.getUserIDByToken(params.token);
             def book
             if(params.offset){
                 def offset = params.offset * 10;
