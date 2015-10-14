@@ -18,6 +18,8 @@ class BookHelperService {
                     "title": books.title,
                     "isbn": books.isbn,
                     "discreption": books.discreption,
+                    "author": books.author,
+                    "image_url": books.url,
                     "category": books.category.name,
                     "isShared": books.isShared,
                     "isOnSell": books.isOnSell,
@@ -30,6 +32,7 @@ class BookHelperService {
                     "yearOfBook" :books.yearOfBook,
                     "isCompleted": books.isCompleted,
                     "onCondition": books.onCondition,
+                    "dateCreated": books.dateCreated,
                     "userName": books.user?.userName,
                     "userEmail": books.user?.email]
         }

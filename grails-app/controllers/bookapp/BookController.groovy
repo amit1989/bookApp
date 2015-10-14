@@ -115,10 +115,11 @@ class BookController {
         JSONObject obj = new JSONObject();
         JSONObject responseObj = new JSONObject();
         try{
-
-
-            params.user = Book.getUserIDByToken(params.token)
+            def user = Book.getUserIDByToken(params.token)
+            println user
             Book book = new Book(params)
+            book.user=user;
+            book.category = Category.findById(params.categoryId)
 
             if(book.save( flush:true, failOnError: true )){
 
@@ -139,13 +140,13 @@ class BookController {
     @Transactional
     def markComplete(){
 
-        def book = Book.get(params.bookId).id
-        book.isCompleted = true;
-
         JSONObject obj = new JSONObject();
         JSONObject responseObj = new JSONObject();
 
         try{
+
+            def book = Book.findById(params.bookId)
+            book.isCompleted = true;
 
             if(book.save(flush: true, failOnError: true)){
                 responseObj.put("message", "book status complete");
@@ -215,20 +216,19 @@ class BookController {
 
     def fetchLatestByCat(){
 
-        println( )
         HashMap jsonMap = new HashMap()
         try {
             def book
             Category category = Category.findByName(params.category)
             if(params.offset){
-                String query = "from Book as b where b.category=:category"
+//                String query = "from Book as b where b.category=:category"
                 def offset = params.offset * 10;
-                book = Book.findAllByCategory(category, [max: 10, offset: offset]);
+                book = Book.findAllByCategoryAndIsCompleted(category, false, [max: 10, offset: offset]);
                 jsonMap = bookHelperService.getBookHasMap(book)
                 render jsonMap as JSON
             }else {
-                String query = "from Book as b where b.category=:category"
-                book = Book.findAllByCategory(category);
+//                String query = "from Book as b where b.category=:category"
+                book = Book.findAllByCategoryAndIsCompleted(category, false);
                 jsonMap = bookHelperService.getBookHasMap(book)
                 render jsonMap as JSON
             }
@@ -236,4 +236,63 @@ class BookController {
             println "error occured: " + e.getMessage()
         }
     }
+
+
+    @Transactional
+    def save_book_address(){
+
+        println(params)
+        JSONObject obj = new JSONObject();
+        JSONObject responseObj = new JSONObject();
+        try{
+            def bookId = Book.findById(params.bookId)
+            PickupLocation address = new PickupLocation(params)
+            address.book = bookId
+            address.user =  Book.getUserIDByToken(params.token)
+            if(address.save( flush:true, failOnError: true )){
+
+                responseObj.put("message", "Adress Confirmed");
+                obj.put("success", responseObj)
+                render obj as JSON
+            }
+
+        }catch (Exception e){
+            e.printStackTrace()
+            responseObj.put("message", "failed to Add Address");
+            responseObj.put("exception", e.getMessage());
+            obj.put("error", responseObj)
+            render obj as JSON
+        }
+
+    }
+
+    def request_book_address(){
+        Book book = Book.findById(params.bookId)
+        def addressOfBook = PickupLocation.findByBook(book)
+
+        JSONObject obj = new JSONObject()
+
+
+        try{
+
+            JSONObject responseObj = new JSONObject();
+            responseObj.put("addressOne", addressOfBook.addressOne);
+            responseObj.put("addressTwo", addressOfBook.addressTwo);
+            responseObj.put("city", addressOfBook.city);
+            responseObj.put("bookId", addressOfBook.bookId);
+            responseObj.put("latitude", addressOfBook.latitude);
+            responseObj.put("longitude", addressOfBook.longitude);
+
+            obj.put("status", "success")
+            obj.put("address", responseObj)
+            render  obj as JSON;
+
+        }catch (Exception e){
+            obj.put("status", "failed")
+            obj.put("error", e.getMessage())
+            render  obj as JSON;
+        }
+    }
+
+
 }

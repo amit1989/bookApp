@@ -14,6 +14,8 @@ class Book {
     String isbn
     String title
     String discreption
+    String author
+    String url
     Category category
     Boolean isShared
     Boolean isOnSell
@@ -27,6 +29,8 @@ class Book {
     Boolean isCompleted
     String onCondition
     UserTable user
+    Date    dateCreated
+
 
 //    static belongsTo = [user: User]
 
@@ -48,10 +52,12 @@ class Book {
         isCompleted(nullable: true)
         discount(nullable: true)
         isOnSell(nullable: true)
+        author(nullable: true)
+        url(nullable: true)
     }
 
     String bookDetail(){
-       return category
+        return category
     }
 
     String bookCategoryByID(){
