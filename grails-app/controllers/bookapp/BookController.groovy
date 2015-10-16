@@ -199,8 +199,8 @@ class BookController {
             def book
             if(params.offset){
                 String query = "from Book as b where b.isCompleted=:flagComplete"
-                def offset = params.offset * 10;
-                book = Book.findAll(query,[flagComplete: false],[ max: 10, offset: offset, sort: 'created_at', order: 'desc']);
+                def offset = Integer.parseInt( params.offset  )* 10;
+                book = Book.findAll(query,[flagComplete: false],[ max: 10, offset: offset]);
                 jsonMap = bookHelperService.getBookHasMap(book)
                 render jsonMap as JSON
             }else {
@@ -222,7 +222,7 @@ class BookController {
             Category category = Category.findByName(params.category)
             if(params.offset){
 //                String query = "from Book as b where b.category=:category"
-                def offset = params.offset * 10;
+                def offset = Integer.parseInt( params.offset  )* 10;
                 book = Book.findAllByCategoryAndIsCompleted(category, false, [max: 10, offset: offset]);
                 jsonMap = bookHelperService.getBookHasMap(book)
                 render jsonMap as JSON
@@ -282,6 +282,8 @@ class BookController {
             responseObj.put("bookId", addressOfBook.bookId);
             responseObj.put("latitude", addressOfBook.latitude);
             responseObj.put("longitude", addressOfBook.longitude);
+            responseObj.put("mobile", addressOfBook.mobileNumber);
+
 
             obj.put("status", "success")
             obj.put("address", responseObj)
