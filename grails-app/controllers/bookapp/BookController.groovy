@@ -296,5 +296,88 @@ class BookController {
         }
     }
 
+    //http://localhost:8080/bookApp/book/addToWishList?token=1444739497970&bookRef=23
+    @Transactional
+    def addToWishList(){
+
+        JSONObject responseObj = new JSONObject();
+        JSONObject obj = new JSONObject()
+
+        try {
+            UserTable user = Book.getUserIDByToken(params.token);
+
+            WishList address = new WishList()
+            address.user = user;
+            address.bookRef = params.bookRef;
+
+            if(address.save(flush: true, failOnError: true)){
+                responseObj.put("message", "Added To Wishlist");
+                obj.put("status", "success")
+                obj.put("response", responseObj)
+                render obj as JSON
+            }
+
+        }catch (Exception e){
+            responseObj.put("message", "Error");
+            obj.put("status", "failed")
+            obj.put("response", e.getMessage())
+            render obj as JSON
+        }
+    }
+
+    @Transactional
+    def removeWishList(){
+        JSONObject responseObj = new JSONObject();
+        JSONObject obj = new JSONObject()
+
+        try {
+            UserTable user = Book.getUserIDByToken(params.token);
+
+            def wishObject = WishList.findByUserAndBookRef(user, params.bookRef)
+
+            println wishObject
+
+            wishObject.delete(flush: true,  failOnError: true)
+
+            responseObj.put("message", "Removed From Wishlist");
+            obj.put("status", "success")
+            obj.put("response", responseObj)
+            render obj as JSON
+
+        }catch (Exception e){
+            responseObj.put("message", "Error");
+            obj.put("status", "failed")
+            obj.put("response", e.getMessage())
+            render obj as JSON
+        }
+
+    }
+
+    def getUserWishList(){
+
+        JSONObject booksobject = new JSONObject()
+        JSONArray array = new JSONArray()
+        def user = Book.getUserIDByToken(params.token);
+        println 'Book List'+user
+        def wishListInstance = WishList.findAllByUser(user)
+
+
+        if(wishListInstance){
+
+            for(int i = 0; i< wishListInstance.size(); i++){
+                String book= wishListInstance.get(i).getBookRef();
+                println("Book :"+book)
+                Book bookInstance = Book.findById(book);
+                if(bookInstance != null){
+                    JSONObject object = bookHelperService.getBookAsJson(bookInstance)
+                    array.putAt(i,object)
+                }
+                println '-----------'+ array
+            }
+            booksobject.put("books", array)
+            render booksobject  as JSON
+
+        }
+    }
 
 }
