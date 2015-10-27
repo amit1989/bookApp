@@ -6,6 +6,7 @@ class Request {
     Book book;
     Boolean is_completed;
     String requestToken;
+    String sharedDate
 
 
     static constraints = {
@@ -13,5 +14,6 @@ class Request {
         book(nullable: true)
         is_completed(nullable: true)
         requestToken(blank: true)
+        sharedDate(nullable: true )
     }
 }
