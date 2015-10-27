@@ -380,4 +380,126 @@ class BookController {
         }
     }
 
+    //will get bookId, UserId, As Params
+    @Transactional
+    def generateShareRequest(){
+
+        JSONObject responseObj = new JSONObject();
+        JSONObject obj = new JSONObject()
+
+        try {
+
+            Book bookId = Book.findById(params.bookId)
+            UserTable user = Book.getUserIDByToken(params.token);
+
+            Request request = new Request()
+            request.is_completed = false;
+            request.book = bookId;
+            request.user = user;
+            request.requestToken = user.email
+
+
+            if(request.save(flush: true,  failOnError: true)){
+
+                responseObj.put("message", "Request Send to user");
+                obj.put("status", "success")
+                obj.put("requestToken", request.requestToken)
+                obj.put("response", responseObj)
+                render obj as JSON
+            }
+
+
+        }catch (Exception e){
+            responseObj.put("message", "Fail to send request"+e.getMessage());
+            obj.put("status", "fail")
+            obj.put("response", responseObj)
+            render obj as JSON
+        }
+    }
+
+    def confirmBookRequest(){
+
+        JSONObject responseObj = new JSONObject();
+        JSONObject obj = new JSONObject()
+
+
+        try{
+            def book = Book.findById(params.bookId)
+            def request = null;
+            if(book != null){
+                request = Request.findByBookAndRequestToken(book, params.requestToken)
+                request.is_completed = true;
+                request.save(flush: true, failOnError: true)
+            }
+
+            if(request == null){
+                responseObj.put("message", "doesnt match bookId or token ");
+                obj.put("status", "failed")
+                obj.put("response", responseObj)
+                render obj as JSON
+            }else{
+                responseObj.put("message", "confirmed");
+                obj.put("status", "success")
+                obj.put("userDetail", request.user.userToken)
+                obj.put("response", responseObj)
+                render obj as JSON
+            }
+
+        }catch (Exception e){
+            responseObj.put("message", "doesnt match bookId or token ");
+            obj.put("status", "failed")
+            obj.put("response", responseObj)
+            render obj as JSON
+        }
+    }
+
+    def getSharedData(){
+
+        HashMap jsonMap = new HashMap()
+
+        try {
+
+            UserTable user = Book.getUserIDByToken(params.token);
+
+                def books = Book.findAllByUserAndIsShared(user ,true);
+                jsonMap = bookHelperService.getBookHasMap(book)
+                render jsonMap as JSON
+
+
+
+            if(books){
+
+                for(int i = 0; i< book.size(); i++){
+
+
+                    Request request = Request.findByBookAndIs_completed(books.get(i), )
+                    request.user
+
+
+                    String book= wishListInstance.get(i).getBookRef();
+                    println("Book :"+book)
+                    Book bookInstance = Book.findById(book);
+                    if(bookInstance != null){
+                        JSONObject object = bookHelperService.getBookAsJson(bookInstance)
+                        array.putAt(i,object)
+                    }
+                    println '-----------'+ array
+                }
+                booksobject.put("books", array)
+                render booksobject  as JSON
+
+            }
+
+
+
+        }catch (Exception e){
+            println "error occured: " + e.getMessage()
+
+        }
+
+
+
+
+    }
+
 }
