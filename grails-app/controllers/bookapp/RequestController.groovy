@@ -1,6 +1,7 @@
 package bookapp
 
 
+
 import static org.springframework.http.HttpStatus.*
 import grails.transaction.Transactional
 
@@ -11,7 +12,7 @@ class RequestController {
 
     def index(Integer max) {
         params.max = Math.min(max ?: 10, 100)
-        respond Request.list(params), model: [requestInstanceCount: Request.count()]
+        respond Request.list(params), model:[requestInstanceCount: Request.count()]
     }
 
     def show(Request requestInstance) {
@@ -30,11 +31,11 @@ class RequestController {
         }
 
         if (requestInstance.hasErrors()) {
-            respond requestInstance.errors, view: 'create'
+            respond requestInstance.errors, view:'create'
             return
         }
 
-        requestInstance.save flush: true
+        requestInstance.save flush:true
 
         request.withFormat {
             form multipartForm {
@@ -57,18 +58,18 @@ class RequestController {
         }
 
         if (requestInstance.hasErrors()) {
-            respond requestInstance.errors, view: 'edit'
+            respond requestInstance.errors, view:'edit'
             return
         }
 
-        requestInstance.save flush: true
+        requestInstance.save flush:true
 
         request.withFormat {
             form multipartForm {
                 flash.message = message(code: 'default.updated.message', args: [message(code: 'Request.label', default: 'Request'), requestInstance.id])
                 redirect requestInstance
             }
-            '*' { respond requestInstance, [status: OK] }
+            '*'{ respond requestInstance, [status: OK] }
         }
     }
 
@@ -80,14 +81,14 @@ class RequestController {
             return
         }
 
-        requestInstance.delete flush: true
+        requestInstance.delete flush:true
 
         request.withFormat {
             form multipartForm {
                 flash.message = message(code: 'default.deleted.message', args: [message(code: 'Request.label', default: 'Request'), requestInstance.id])
-                redirect action: "index", method: "GET"
+                redirect action:"index", method:"GET"
             }
-            '*' { render status: NO_CONTENT }
+            '*'{ render status: NO_CONTENT }
         }
     }
 
@@ -97,7 +98,7 @@ class RequestController {
                 flash.message = message(code: 'default.not.found.message', args: [message(code: 'requestInstance.label', default: 'Request'), params.id])
                 redirect action: "index", method: "GET"
             }
-            '*' { render status: NOT_FOUND }
+            '*'{ render status: NOT_FOUND }
         }
     }
 }

@@ -4,6 +4,9 @@ import grails.converters.JSON
 import org.json.simple.JSONArray
 import org.json.simple.JSONObject
 
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+
 import static org.springframework.http.HttpStatus.*
 import grails.transaction.Transactional
 
@@ -417,19 +420,28 @@ class BookController {
         }
     }
 
+    @Transactional
     def confirmBookRequest(){
-
+        print 'params' + params
         JSONObject responseObj = new JSONObject();
         JSONObject obj = new JSONObject()
-
 
         try{
             def book = Book.findById(params.bookId)
             def request = null;
             if(book != null){
                 request = Request.findByBookAndRequestToken(book, params.requestToken)
+                println '-----*'+request;
+
                 request.is_completed = true;
+                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
+                Date date = new Date();
+
+                request.sharedDate = dateFormat.format(date)
                 request.save(flush: true, failOnError: true)
+
+                book.isCompleted = true;
+                book.save(flush: true, failOnError: true)
             }
 
             if(request == null){
@@ -453,53 +465,54 @@ class BookController {
         }
     }
 
-    def getSharedData(){
 
-        HashMap jsonMap = new HashMap()
+    def sharedBooksRequest(){
 
-        try {
+        JSONObject booksobject = new JSONObject()
+        JSONArray array = new JSONArray()
 
-            UserTable user = Book.getUserIDByToken(params.token);
+        def rec =  Book.executeQuery("select b.id, b.title, r.is_completed, r.requestToken, r.user.id, b.endDate, r.sharedDate from Book b ,Request r where b.id = r.book.id and b.id = :bookId", [bookId : Long.parseLong(params.bookId)]);
 
-                def books = Book.findAllByUserAndIsShared(user ,true);
-                jsonMap = bookHelperService.getBookHasMap(book)
-                render jsonMap as JSON
+        println rec
+        for(int i=0; i < rec.size(); i++ ){
+            HashMap jsonMap = new HashMap()
 
-
-
-            if(books){
-
-                for(int i = 0; i< book.size(); i++){
-
-
-                    Request request = Request.findByBookAndIs_completed(books.get(i), )
-                    request.user
-
-
-                    String book= wishListInstance.get(i).getBookRef();
-                    println("Book :"+book)
-                    Book bookInstance = Book.findById(book);
-                    if(bookInstance != null){
-                        JSONObject object = bookHelperService.getBookAsJson(bookInstance)
-                        array.putAt(i,object)
-                    }
-                    println '-----------'+ array
-                }
-                booksobject.put("books", array)
-                render booksobject  as JSON
-
-            }
-
-
-
-        }catch (Exception e){
-            println "error occured: " + e.getMessage()
-
+            jsonMap.put("bookId", rec[i][0] )
+            jsonMap.put("title", rec[i][1] )
+            jsonMap.put("is_completed", rec[i][2] )
+            jsonMap.put("requestToken", rec[i][3] )
+            jsonMap.put("userId", rec[i][4] )
+            jsonMap.put("SharedDays", rec[i][5] )
+            jsonMap.put("sharedOnDate", rec[i][6] )
+            array.putAt( i, jsonMap )
         }
+        booksobject.put("books", array)
+        render booksobject as JSON
+    }
 
+    def getMySharedTokens(){
+        JSONObject booksobject = new JSONObject()
+        JSONArray array = new JSONArray()
 
+        UserTable user  = Book.getUserIDByToken(params.token);
 
+        def rec =  Book.executeQuery("select b.id, b.title, r.is_completed, r.requestToken, r.user.id, b.endDate, r.sharedDate from Book b ,Request r where b.id = r.book.id and r.user.id = :bookId", [bookId : user.id]);
 
+        println rec
+        for(int i=0; i < rec.size(); i++ ){
+            HashMap jsonMap = new HashMap()
+
+            jsonMap.put("bookId", rec[i][0] )
+            jsonMap.put("title", rec[i][1] )
+            jsonMap.put("is_completed", rec[i][2] )
+            jsonMap.put("requestToken", rec[i][3] )
+            jsonMap.put("userId", rec[i][4] )
+            jsonMap.put("SharedDays", rec[i][5] )
+            jsonMap.put("sharedOnDate", rec[i][6] )
+            array.putAt( i, jsonMap )
+        }
+        booksobject.put("books", array)
+        render booksobject as JSON
     }
 
 }

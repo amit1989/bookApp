@@ -158,4 +158,55 @@ class UserTableController {
             render  obj as JSON;
         }
     }
+
+    @Transactional
+    def createUser1(){
+        JSONObject obj = new JSONObject();
+
+        try{
+
+            UserTable userold =  UserTable.findByUserNameAndEmail(params.userName, params.email);
+            if(userold){
+                userold.gcm = params.gcm;
+                if(userold.save( flush: true , failOnError: true)){
+                    JSONObject responseObj = new JSONObject();
+                    responseObj.put("userToken", userold.userToken);
+                    responseObj.put("message", "Already Register");
+                    obj.put("success", responseObj)
+                    render  obj as JSON;
+                }
+
+            }else{
+
+                UserTable user = new UserTable();
+                user.email = params.email;
+                user.userName = params.userName;
+                user.gcm = params.gcm;
+                String token  = UserHelperService.nextId();
+                user.userToken = token;
+
+                if(user.save( flush: true , failOnError: true)){
+                    println('saving...........')
+
+                    JSONObject responseObj = new JSONObject();
+                    responseObj.put("userToken", token);
+                    obj.put("success", responseObj)
+                    render  obj as JSON;
+                }else{
+                    JSONObject responseObj = new JSONObject();
+                    responseObj.put("error", "failed");
+                    obj.put("error", responseObj)
+                    render  obj as JSON;
+                }
+            }
+
+
+
+        }catch (Exception e){
+            JSONObject responseObj = new JSONObject();
+            responseObj.put("error", e.getMessage());
+            obj.put("error", responseObj)
+            render  obj as JSON;
+        }
+    }
 }
