@@ -126,6 +126,7 @@ class BookController {
 
             if(book.save( flush:true, failOnError: true )){
 
+                responseObj.put("bookId", book.getId())
                 responseObj.put("message", "book created");
                 obj.put("success", responseObj)
                 render obj as JSON
@@ -514,5 +515,11 @@ class BookController {
         booksobject.put("books", array)
         render booksobject as JSON
     }
+
+    def getCategories(){
+        def category = Category.findAll()
+        render category as JSON
+    }
+
 
 }
