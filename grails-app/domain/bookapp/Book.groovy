@@ -1,5 +1,7 @@
 package bookapp
 
+import org.grails.databinding.BindingFormat
+
 class Book {
 
 /*    *//* Default (injected) attributes of GORM *//*
@@ -28,7 +30,10 @@ class Book {
     String yearOfBook
     Boolean isCompleted
     String onCondition
+    Integer shareCount
     UserTable user
+
+    @BindingFormat('yyyy-MM-dd HH:mm:ss.S')
     Date    dateCreated
 
 
@@ -54,6 +59,7 @@ class Book {
         isOnSell(nullable: true)
         author(nullable: true)
         url(nullable: true)
+        shareCount(nullable: true)
     }
 
     String bookDetail(){
