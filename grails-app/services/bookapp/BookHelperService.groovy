@@ -34,6 +34,7 @@ class BookHelperService {
                     "isCompleted": books.isCompleted,
                     "onCondition": books.onCondition,
                     "dateCreated": books.dateCreated,
+                    "shareCount": books.shareCount,
                     "userName": books.user?.userName,
                     "userEmail": books.user?.email]
         }
