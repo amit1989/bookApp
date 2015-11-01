@@ -202,13 +202,13 @@ class BookController {
         try {
             def book
             if(params.offset){
-                String query = "from Book as b where b.isCompleted=:flagComplete"
+                String query = "from Book as b where b.isCompleted=:flagComplete order by b.dateCreated desc"
                 def offset = Integer.parseInt( params.offset  )* 10;
                 book = Book.findAll(query,[flagComplete: false],[ max: 10, offset: offset]);
                 jsonMap = bookHelperService.getBookHasMap(book)
                 render jsonMap as JSON
             }else {
-                String query = "from Book as b where b.isCompleted=:flagComplete "
+                String query = "from Book as b where b.isCompleted=:flagComplete order by b.dateCreated desc"
                 book = Book.findAll(query, [flagComplete: false]);
                 jsonMap = bookHelperService.getBookHasMap(book)
                 render jsonMap as JSON
@@ -405,6 +405,13 @@ class BookController {
 
             if(request.save(flush: true,  failOnError: true)){
 
+                if(bookId.shareCount == null){
+                    bookId.shareCount = 1;
+                }else{
+                    bookId.shareCount = bookId.getShareCount() + 1;
+                }
+                bookId.save( flush: true, failOnError: true)
+
                 responseObj.put("message", "Request Send to user");
                 obj.put("status", "success")
                 obj.put("requestToken", request.requestToken)
@@ -521,5 +528,40 @@ class BookController {
         render category as JSON
     }
 
+    def getUserDetailByIdOrToken(){
+        if(params.token){
+         def user  = Book.getUserIDByToken(params.token)
+            render user as JSON
+        }else if(params.userId){
+            def user  = UserTable.findById(params.userId)
+            render user as JSON
+        }
+    }
+
+   /* def filterBook(){
+
+        if(params.paid && params.shared && params.donated && params.category){
+
+
+            String query = "from Book as b where b.isCompleted=:flagComplete and b.isShared =:shared order by b.dateCreated desc"
+            def offset = Integer.parseInt( params.offset  )* 10;
+            book = Book.findAll(query,[flagComplete: false],[ max: 10, offset: offset]);
+            jsonMap = bookHelperService.getBookHasMap(book)
+            render jsonMap as JSON
+
+
+
+        }
+
+
+        if(params.paid){
+
+        }else if (params.rent){
+
+        }else if (params.donated){
+
+        }
+
+    }*/
 
 }
