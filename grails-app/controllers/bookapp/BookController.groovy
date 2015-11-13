@@ -14,6 +14,7 @@ import grails.transaction.Transactional
 class BookController {
 
     def BookHelperService bookHelperService;
+    def PushNotificationService ;
 
     static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
@@ -218,6 +219,23 @@ class BookController {
         }
     }
 
+    def fetchBooksByCity(){
+        println('in fetchLatestBooks')
+        HashMap jsonMap = new HashMap()
+        try {
+
+            def books = PickupLocation.findAllByCity(params.city);
+            def books1 = [];
+            books.each {
+                books1.push( Book.findById(it.bookId) )
+            }
+            render books1 as JSON
+
+        }catch (Exception e){
+            println "error occured: " + e.getMessage()
+        }
+    }
+
     def fetchLatestByCat(){
 
         HashMap jsonMap = new HashMap()
@@ -412,6 +430,9 @@ class BookController {
                 }
                 bookId.save( flush: true, failOnError: true)
 
+                sendPushNotification(user.gcm, "requestToken", request.requestToken)
+                sendPushNotification(bookId.user.gcm, "notifySeller", ""+user.userName)
+
                 responseObj.put("message", "Request Send to user");
                 obj.put("status", "success")
                 obj.put("requestToken", request.requestToken)
@@ -538,30 +559,158 @@ class BookController {
         }
     }
 
-   /* def filterBook(){
 
-        if(params.paid && params.shared && params.donated && params.category){
+    def sendPushNotification(String gcm, String requestType, String details){
+        bookHelperService.prepareAndroidNotification(gcm, requestType, details)
+    }
 
 
-            String query = "from Book as b where b.isCompleted=:flagComplete and b.isShared =:shared order by b.dateCreated desc"
-            def offset = Integer.parseInt( params.offset  )* 10;
-            book = Book.findAll(query,[flagComplete: false],[ max: 10, offset: offset]);
+
+
+    def filterBook(){
+
+
+        println 'filterBook******************'
+        def book;
+        HashMap jsonMap = new HashMap()
+
+
+        try{
+            def offset = 0;
+            if (params.offset){
+                offset = Integer.parseInt( params.offset  )* 10;
+            }
+
+            if( params.shared && params.category){
+                Category category = Category.findByName(params.category)
+                book = Book.findAllByCategoryAndIsCompletedAndIsShared(category, false, true, [max: 10, offset: offset]);
+
+            }
+
+            if( params.onsell && params.category){
+                Category category = Category.findByName(params.category)
+                book = Book.findAllByCategoryAndIsCompletedAndIsOnSell(category, false, true, [max: 10, offset: offset]);
+
+            }
+
+
+            if( params.donated && params.category){
+                Category category = Category.findByName(params.category)
+                book = Book.findAllByCategoryAndIsCompletedAndIsDonated(category, false, true, [max: 10, offset: offset]);
+            }
+
+            if( params.shared ){
+                book = Book.findAllByIsCompletedAndIsShared(false, true, [max: 10, offset: offset]);
+            }else if ( params.onsell ){
+                book = Book.findAllByIsCompletedAndIsOnSell(false, true, [max: 10, offset: offset]);
+            }else if( params.donated ){
+                book = Book.findAllByIsCompletedAndIsDonated(false, true, [max: 10, offset: offset]);
+            }
+
+            println 'books++++'+book
+
             jsonMap = bookHelperService.getBookHasMap(book)
             render jsonMap as JSON
 
-
-
+        }catch (Exception e){
+            println "error occured: " + e.getMessage()
         }
 
+    }
 
-        if(params.paid){
+    @Transactional
+    def removeUserBook(){
+        JSONObject obj = new JSONObject();
+        JSONObject responseObj = new JSONObject();
 
-        }else if (params.rent){
+        try{
 
-        }else if (params.donated){
+            def book = Book.findById(params.bookId)
 
+            println 'book'+book
+
+            PickupLocation.findAll().each {it.delete(flush:true, failOnError:true)}
+            Request.findAll().each {it.delete(flush:true, failOnError:true)}
+
+
+            if(book.delete(flush: true, failOnError: true)){
+            }
+
+                responseObj.put("message", "book Deleted");
+                obj.put("success", responseObj)
+                render obj as JSON
+
+
+        }catch (Exception e){
+            responseObj.put("message", "failed");
+            responseObj.put("exception", e.getMessage());
+            obj.put("success", responseObj)
+            render obj as JSON
         }
 
-    }*/
+    }
 
+    //http://localhost:8080/bookApp/book/addCustomTag?bookId=8&tags=kdk&pickupId=
+    @Transactional
+    def addCustomTag(){
+
+        JSONObject obj = new JSONObject();
+        JSONObject responseObj = new JSONObject();
+
+        try {
+
+            Tags tags = new Tags(params);
+
+            tags.location = PickupLocation.findById(params.pickupId)
+            tags.book = Book.findById(params.bookId)
+
+            if(tags.save( flush:true, failOnError: true )){
+
+                responseObj.put("message", "Tag Added");
+                obj.put("success", responseObj)
+                render obj as JSON
+            }
+
+        }catch (Exception e){
+            e.printStackTrace()
+            responseObj.put("message", "failed to Add Tag");
+            responseObj.put("exception", e.getMessage());
+            obj.put("error", responseObj)
+            render obj as JSON
+        }
+    }
+
+    def retriveBooksByTag(){
+
+        def book = Book.findById( params.bookId );
+
+        def tags = Tags.findAllByBook( book );
+        def books = [];
+        tags.each {
+            books.push( Book.findById( it.bookId ) )
+        }
+        render books as JSON
+    }
+
+    def searchByTag(){
+
+        def books = Tags.createCriteria()
+        def results = books.list {
+            like("tags", params.tags+"%")
+        }
+
+        render results as JSON;
+    }
+
+    def getCityTags(){
+        def locat  = PickupLocation.findByCity( params.city )
+        def tags =  Tags.findAllByBook(locat);
+
+        def books = [];
+        tags.each {
+            books.push( Book.findById( it.bookId ) )
+        }
+        render books as JSON
+
+    }
 }
