@@ -52,7 +52,7 @@ class BookHelperService {
                 messages['Message'] = "Request Token Generated : "+details
             }
 
-            if(requestType.equals("requestToken")){
+            if(requestType.equals("notifySeller")){
 
                 messages['Message'] = details+" : has shown intrest in your book. "
             }
