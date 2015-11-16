@@ -11,6 +11,10 @@
 //    grails.config.locations << "file:" + System.properties["${appName}.config.location"]
 // }
 
+grails.databinding.dateFormats = [
+        'MMddyyyy', 'yyyy-MM-dd HH:mm:ss.S', "yyyy-MM-dd'T'hh:mm:ss'Z'"
+]
+
 grails.project.groupId = appName // change this to alter the default package name and Maven publishing destination
 
 // The ACCEPT header will not be used for content negotiation for user agents containing the following strings (defaults to the 4 major rendering engines)
@@ -113,3 +117,9 @@ log4j = {
            'org.hibernate',
            'net.sf.ehcache.hibernate'
 }
+
+
+android.gcm.api.key = 'AIzaSyBlQmvDRpJwQT-1aXG5qQsqPZiil1KMuPk'
+android.gcm.time.to.live=1419200
+android.gcm.delay.'while'.idle=false
+android.gcm.retries=3
