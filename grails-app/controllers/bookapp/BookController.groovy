@@ -702,6 +702,7 @@ class BookController {
         def books = Tags.createCriteria()
         def results = books.list {
             like("tags", params.tags+"%")
+
         }
 
 
