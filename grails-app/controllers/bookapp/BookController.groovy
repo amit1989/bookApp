@@ -681,37 +681,56 @@ class BookController {
         }
     }
 
-    def retriveBooksByTag(){
+    def retriveBookTag(){
 
         def book = Book.findById( params.bookId );
 
-        def tags = Tags.findAllByBook( book );
-        def books = [];
-        tags.each {
-            books.push( Book.findById( it.bookId ) )
-        }
-        render books as JSON
+//        def tags = Tags.findAllByBook( book );
+//        def books = [];
+//        tags.each {
+//            books.push( Book.findById( it.bookId ) )
+//        }
+        def tags = Tags.findAllByBook(book)
+        render tags as JSON
     }
 
     def searchByTag(){
+
+        JSONObject booksobject = new JSONObject()
+        JSONArray array = new JSONArray();
 
         def books = Tags.createCriteria()
         def results = books.list {
             like("tags", params.tags+"%")
         }
 
-        render results as JSON;
+
+        for(int i=0; i < results.size(); i++ ){
+
+            Book bookInstance = Book.findById(results.get(i).book.id);
+            println '---'+results.get(i).book.title
+            if(bookInstance != null){
+                JSONObject object = bookHelperService.getBookAsJson(bookInstance)
+                array.putAt(i,object)
+            }
+        }
+
+            booksobject.put("books", array)
+            render booksobject  as JSON
     }
 
     def getCityTags(){
-        def locat  = PickupLocation.findByCity( params.city )
-        def tags =  Tags.findAllByBook(locat);
+        def locat  = PickupLocation.findAllByCity( params.city )
+        println '***'+locat
+//        def tags =  Tags.findAllByLocation(locat);
 
-        def books = [];
-        tags.each {
-            books.push( Book.findById( it.bookId ) )
+        def tags = [];
+        locat.each {
+            println '----'+
+
+                    tags.push( Tags.findByLocation(it) )
         }
-        render books as JSON
+        render tags as JSON
 
     }
 }
