@@ -727,8 +727,6 @@ class BookController {
 
         def tags = [];
         locat.each {
-            println '----'+
-
                     tags.push( Tags.findByLocation(it) )
         }
         render tags as JSON
