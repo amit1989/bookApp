@@ -114,7 +114,7 @@ class BookHelperService {
     public HashMap getBookHasMap(def book){
 
         HashMap jsonMap = new HashMap()
-        jsonMap.students = book.collect { books ->
+        jsonMap.books = book.collect { books ->
             return ["id": books.id,
                     "title": books.title,
                     "isbn": books.isbn,

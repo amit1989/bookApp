@@ -683,6 +683,7 @@ class BookController {
 
     def retriveBookTag(){
 
+        JSONArray array = new JSONArray();
         def book = Book.findById( params.bookId );
 
 //        def tags = Tags.findAllByBook( book );
@@ -691,7 +692,14 @@ class BookController {
 //            books.push( Book.findById( it.bookId ) )
 //        }
         def tags = Tags.findAllByBook(book)
-        render tags as JSON
+
+        def tagList = [];
+        tags.each {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("tags", it.tags)
+            tagList.push(jsonObject)
+        }
+        render tagList as JSON
     }
 
     def searchByTag(){
@@ -730,6 +738,34 @@ class BookController {
                     tags.push( Tags.findByLocation(it) )
         }
         render tags as JSON
+
+    }
+
+    def getBookListByCity() {
+
+        HashMap jsonMap = new HashMap()
+        def bookList = [];
+        if(params.offset){
+            def offset = Integer.parseInt( params.offset  )* 10;
+            def books = PickupLocation.findAllByCity(params.city ,[ max: 10, offset: offset])
+            println "----"+ books
+            def book;
+            books.each {
+                book = Book.findById(it.book.id)
+                bookList.push(book)
+            }
+
+        }else{
+            def books = PickupLocation.findAllByCity(params.city)
+            println "----"+ books
+            def book;
+            books.each {
+                book = Book.findById(it.book.id)
+                bookList.push(book)
+            }
+        }
+        jsonMap = bookHelperService.getBookHasMap(bookList)
+        render jsonMap as JSON
 
     }
 }
