@@ -125,6 +125,19 @@ class BookController {
             book.user=user;
             book.category = Category.findById(params.categoryId)
 
+            if(request.getFile('image')){
+                def uploadedFile = request.getFile('image')
+                def webRootDir = servletContext.getRealPath("/")
+                println "webRootDir: " + webRootDir
+                def userDir = new File(webRootDir, "/images/books")
+                println "userDir: " + userDir
+                userDir.mkdirs()
+                String fileName = Book.getTimeStamp()+user.userToken+".jpg"
+                uploadedFile.transferTo(new File(userDir, fileName))
+                book.imageUrl=fileName
+            }
+
+
             if(book.save( flush:true, failOnError: true )){
 
                 responseObj.put("bookId", book.getId())

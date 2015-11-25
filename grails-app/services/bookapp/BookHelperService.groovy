@@ -135,6 +135,7 @@ class BookHelperService {
                     "onCondition": books.onCondition,
                     "dateCreated": books.dateCreated,
                     "shareCount": books.shareCount,
+                    "imageName": books.imageUrl,
                     "userName": books.user?.userName,
                     "userEmail": books.user?.email]
         }
@@ -166,6 +167,7 @@ class BookHelperService {
         object.put("isCompleted", books.isCompleted)
         object.put("onCondition", books.onCondition)
         object.put("dateCreated", books.dateCreated)
+        object.put("imageName", books.imageUrl)
         object.put("userName", books.user?.userName)
         object.put("userEmail", books.user?.email)
 
