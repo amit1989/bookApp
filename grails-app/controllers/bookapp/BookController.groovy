@@ -645,7 +645,7 @@ class BookController {
 
             PickupLocation.findAll().each {it.delete(flush:true, failOnError:true)}
             Request.findAll().each {it.delete(flush:true, failOnError:true)}
-
+            Tags.findAllByBook(book).each {it.delete(flush:true, failOnError:true)}
 
             if(book.delete(flush: true, failOnError: true)){
             }
