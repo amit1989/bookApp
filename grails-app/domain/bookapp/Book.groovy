@@ -2,6 +2,8 @@ package bookapp
 
 import org.grails.databinding.BindingFormat
 
+import java.text.SimpleDateFormat
+
 class Book {
 
 /*    *//* Default (injected) attributes of GORM *//*
@@ -32,7 +34,8 @@ class Book {
     String onCondition
     Integer shareCount
     UserTable user
-
+    Byte[] image
+    String imageUrl
     @BindingFormat('yyyy-MM-dd HH:mm:ss.S')
     Date    dateCreated
 
@@ -60,6 +63,8 @@ class Book {
         author(nullable: true)
         url(nullable: true)
         shareCount(nullable: true)
+        image(nullable: true)
+        imageUrl(blank: true)
     }
 
     String bookDetail(){
@@ -72,5 +77,11 @@ class Book {
 
     static def  getUserIDByToken(String token){
         return  UserTable.findByUserToken(token)
+    }
+    static String getTimeStamp(){
+        SimpleDateFormat sdfdate = new SimpleDateFormat("yyyyMMddHHmmss");//dd/MM/yyyy
+        Date now = new Date();
+        String strDate = sdfdate.format(now);
+        return strDate;
     }
 }
