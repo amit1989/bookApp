@@ -735,7 +735,9 @@ class BookController {
 
         def tags = [];
         locat.each {
-                    tags.push( Tags.findByLocation(it) )
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("tag", Tags.findByLocation(it).tags )
+                    tags.push( jsonObject )
         }
         render tags as JSON
 
