@@ -34,7 +34,7 @@ class Book {
     String onCondition
     Integer shareCount
     UserTable user
-    Byte[] image
+    byte[] image
     String imageUrl
     @BindingFormat('yyyy-MM-dd HH:mm:ss.S')
     Date    dateCreated
@@ -63,9 +63,10 @@ class Book {
         author(nullable: true)
         url(nullable: true)
         shareCount(nullable: true)
-        image(nullable: true)
-        imageUrl(blank: true)
+        image(nullable: true, maxSize: 16384 )
+        imageUrl(nullable: true)
     }
+
 
     String bookDetail(){
         return category
