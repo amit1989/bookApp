@@ -63,7 +63,7 @@ class Book {
         author(nullable: true)
         url(nullable: true)
         shareCount(nullable: true)
-        image(nullable: true, maxSize: 16384 )
+        image(nullable: true, maxSize: 163840 )
         imageUrl(nullable: true)
     }
 
