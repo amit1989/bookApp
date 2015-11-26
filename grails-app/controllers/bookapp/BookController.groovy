@@ -125,7 +125,7 @@ class BookController {
             book.user=user;
             book.category = Category.findById(params.categoryId)
 
-            if(request.getFile('image')){
+            if(request?.getFile('image')){
                 def uploadedFile = request.getFile('image')
                 def webRootDir = servletContext.getRealPath("/")
                 println "webRootDir: " + webRootDir
