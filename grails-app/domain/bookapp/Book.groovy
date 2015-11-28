@@ -34,7 +34,7 @@ class Book {
     String onCondition
     Integer shareCount
     UserTable user
-    String image
+//    String image
     String imageUrl
     @BindingFormat('yyyy-MM-dd HH:mm:ss.S')
     Date    dateCreated
@@ -63,7 +63,7 @@ class Book {
         author(nullable: true)
         url(nullable: true)
         shareCount(nullable: true)
-        image(nullable: true)
+//        image(nullable: true)
         imageUrl(nullable: true)
     }
 

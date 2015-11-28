@@ -133,9 +133,9 @@ class BookController {
                 println "userDir: " + userDir
                 userDir.mkdirs()
                 String fileName = Book.getTimeStamp()+user.userToken+".jpg"
+//                book.image = (new File(userDir, fileName)).absolutePath
                 uploadedFile.transferTo(new File(userDir, fileName))
 //                book.image = uploadedFile.bytes
-
                 book.imageUrl=fileName
                 println '************END**************'
             }
