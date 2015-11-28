@@ -126,7 +126,7 @@ class BookController {
             book.category = Category.findById(params.categoryId)
 
             if(request?.getFile('image')){
-                def uploadedFile = request.getFile('image')
+                def uploadedFile  = request.getFile('image')
                 def webRootDir = servletContext.getRealPath("/")
                 println "webRootDir: " + webRootDir
                 def userDir = new File(webRootDir, "/images/books")
@@ -134,7 +134,10 @@ class BookController {
                 userDir.mkdirs()
                 String fileName = Book.getTimeStamp()+user.userToken+".jpg"
                 uploadedFile.transferTo(new File(userDir, fileName))
+//                book.image = uploadedFile.bytes
+
                 book.imageUrl=fileName
+                println '************END**************'
             }
 
 
@@ -755,6 +758,8 @@ class BookController {
         render tags as JSON
 
     }
+//    book = Book.findAllByCategoryAndIsCompleted(category, false, [max: 10, offset: offset]);
+
 
     def getBookListByCity() {
 
@@ -766,7 +771,7 @@ class BookController {
             println "----"+ books
             def book;
             books.each {
-                book = Book.findById(it.book.id)
+                book = Book.findByIdAndIsCompleted(it.book.id, false)
                 bookList.push(book)
             }
 
@@ -775,7 +780,37 @@ class BookController {
             println "----"+ books
             def book;
             books.each {
-                book = Book.findById(it.book.id)
+                book = Book.findByIdAndIsCompleted(it.book.id, false)
+                bookList.push(book)
+            }
+        }
+        jsonMap = bookHelperService.getBookHasMap(bookList)
+        render jsonMap as JSON
+
+    }
+
+    def getBookListByCityAndCat() {
+
+        Category category = Category.findByName(params.category)
+
+        HashMap jsonMap = new HashMap()
+        def bookList = [];
+        if(params.offset){
+            def offset = Integer.parseInt( params.offset  )* 10;
+            def books = PickupLocation.findAllByCity(params.city ,[ max: 10, offset: offset])
+            println "----"+ books
+            def book;
+            books.each {
+                book = Book.findByIdAndIsCompletedAndCategory(it.book.id, false, category)
+                bookList.push(book)
+            }
+
+        }else{
+            def books = PickupLocation.findAllByCity(params.city)
+            println "----"+ books
+            def book;
+            books.each {
+                book = Book.findByIdAndIsCompletedAndCategory(it.book.id, false, category)
                 bookList.push(book)
             }
         }
