@@ -127,7 +127,9 @@ class BookController {
             Book book = new Book(params)
             if(book.save(flush:true)){
                 jsonStatus = true
-                jsonResponse.push("book created successfully, bookId: " + book.getId())
+				Map bookMap = new HashMap()
+                bookMap.put("bookId", book.getId())
+                jsonResponse.push(bookMap)
             }
         }
         renderResponse()
