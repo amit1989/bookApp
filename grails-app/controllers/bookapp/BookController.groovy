@@ -11,10 +11,17 @@ import static org.springframework.http.HttpStatus.*
 import grails.transaction.Transactional
 
 @Transactional(readOnly = true)
-class BookController {
+import javax.sql.DataSource
 
+class BookController {
     def BookHelperService bookHelperService;
     def PushNotificationService ;
+
+    JSONObject jsonObject
+    List jsonErrors
+    Boolean jsonStatus
+    List jsonResponse
+    List jsonRequest
 
     static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
@@ -113,48 +120,44 @@ class BookController {
     //http://localhost:8080/bookApp/book/create_book?title=History&token=12125244
     @Transactional
     def create_book(){
-
-        println(params)
-
-        JSONObject obj = new JSONObject();
-        JSONObject responseObj = new JSONObject();
-        try{
-            def user = Book.getUserIDByToken(params.token)
-            println user
+        initiateJSONParameters()
+        validateBookFields()
+        if(jsonErrors.size() == 0){
+            jsonStatus = true
             Book book = new Book(params)
-            book.user=user;
-            book.category = Category.findById(params.categoryId)
-
-            if(request?.getFile('image')){
-                def uploadedFile  = request.getFile('image')
-                def webRootDir = servletContext.getRealPath("/")
-                println "webRootDir: " + webRootDir
-                def userDir = new File(webRootDir, "/images/books")
-                println "userDir: " + userDir
-                userDir.mkdirs()
-                String fileName = Book.getTimeStamp()+user.userToken+".jpg"
-//                book.image = (new File(userDir, fileName)).absolutePath
-                uploadedFile.transferTo(new File(userDir, fileName))
-//                book.image = uploadedFile.bytes
-                book.imageUrl=fileName
-                println '************END**************'
+            if(book.save(flush:true)){
+                jsonStatus = true
+                jsonResponse.push("book created successfully, bookId: " + book.getId())
             }
+        }
+        renderResponse()
+    }
 
-
-            if(book.save( flush:true, failOnError: true )){
-
-                responseObj.put("bookId", book.getId())
-                responseObj.put("message", "book created");
-                obj.put("success", responseObj)
-                render obj as JSON
+    def validateBookFields(){
+        if(!params.title){
+            jsonErrors.push("book title cannot be empty")
+        }
+        if(params.token) {
+            def user = Book.getUserIDByToken(params.token)
+            params.user = user
+        }
+        if(params.categoryId){
+            params.category = Category.findById(params.categoryId)
+        }
+        if(params.image) {
+            if (request?.getFile('image')) {
+                try {
+                    def uploadedFile = request.getFile('image')
+                    def webRootDir = servletContext.getRealPath("/")
+                    def userDir = new File(webRootDir, "/images/books")
+                    userDir.mkdirs()
+                    String fileName = Book.getTimeStamp() + user.userToken + ".jpg"
+                    uploadedFile.transferTo(new File(userDir, fileName))
+                    params.imageUrl = fileName
+                }catch(Exception e){
+                    jsonErrors.push("Error occured while saving book image")
+                }
             }
-
-        }catch (Exception e){
-            e.printStackTrace()
-            responseObj.put("message", "failed to create book");
-            responseObj.put("exception", e.getMessage());
-            obj.put("error", responseObj)
-            render obj as JSON
         }
     }
 
@@ -581,58 +584,70 @@ class BookController {
         bookHelperService.prepareAndroidNotification(gcm, requestType, details)
     }
 
-
-
-
-    def filterBook(){
-
-
-        println 'filterBook******************'
-        def book;
-        HashMap jsonMap = new HashMap()
-
-
-        try{
-            def offset = 0;
-            if (params.offset){
-                offset = Integer.parseInt( params.offset  )* 10;
+    def getBookList(){
+        boolean isParamsFound = false
+        def bookList
+        if(params.category){
+            isParamsFound = true
+            def categories = Category.findAllByName(params.category)
+            if(categories){
+                bookList = Book.findAllByCategoryInList(categories)
             }
-
-            if( params.shared && params.category){
-                Category category = Category.findByName(params.category)
-                book = Book.findAllByCategoryAndIsCompletedAndIsShared(category, false, true, [max: 10, offset: offset]);
-
+        }
+        if(params.city){
+            isParamsFound = true
+            def locations = PickupLocation.findAllByCity(params.city)
+            if(locations){
+                if(params.category) {
+                    def categories = Category.findAllByName(params.category)
+                    bookList = Book.findAllByCategoryInListAndIdInList(categories, locations?.book?.id)
+                }else {
+                    bookList = Book.findAllByIdInList(locations?.book?.id)
+                }
             }
-
-            if( params.onsell && params.category){
-                Category category = Category.findByName(params.category)
-                book = Book.findAllByCategoryAndIsCompletedAndIsOnSell(category, false, true, [max: 10, offset: offset]);
-
+        }
+        if( params.shared){
+            isParamsFound = true
+            if(params.category || params.city) {
+                bookList = Book.findAllByIdInListAndIsCompletedAndIsShared(bookList?.id, false, true);
             }
-
-
-            if( params.donated && params.category){
-                Category category = Category.findByName(params.category)
-                book = Book.findAllByCategoryAndIsCompletedAndIsDonated(category, false, true, [max: 10, offset: offset]);
+            bookList = Book.findAllByIsCompletedAndIsShared(false, true);
+        }
+        if( params.onsell){
+            isParamsFound = true
+            if(params.category || params.city) {
+                bookList = Book.findAllByIdInListAndIsCompletedAndIsOnSell(bookList?.id, false, true);
             }
-
-            if( params.shared ){
-                book = Book.findAllByIsCompletedAndIsShared(false, true, [max: 10, offset: offset]);
-            }else if ( params.onsell ){
-                book = Book.findAllByIsCompletedAndIsOnSell(false, true, [max: 10, offset: offset]);
-            }else if( params.donated ){
-                book = Book.findAllByIsCompletedAndIsDonated(false, true, [max: 10, offset: offset]);
+            bookList = Book.findAllByIsCompletedAndIsOnSell(false, true);
+        }
+        if( params.donated){
+            isParamsFound = true
+            if(params.category || params.city) {
+                bookList = Book.findAllByIdInListAndIsCompletedAndIsDonated(bookList?.id, false, true);
             }
-
-            println 'books++++'+book
-
-            jsonMap = bookHelperService.getBookHasMap(book)
-            render jsonMap as JSON
-
-        }catch (Exception e){
-            println "error occured: " + e.getMessage()
+            bookList = Book.findAllByIsCompletedAndIsDonated(false, true);
         }
 
+        if(!isParamsFound){
+            bookList = Book.list()
+        }
+        return bookList
+    }
+
+    def filterBook(){
+        initiateJSONParameters()
+        def books = getBookList()
+        def bookList
+        if(books) {
+            bookList = bookHelperService.getBookHasMap(books)
+        }else{
+            jsonErrors.push("No books found")
+        }
+        if(jsonErrors.size() == 0){
+            jsonStatus = true
+            jsonResponse.push(bookList)
+        }
+        renderResponse()
     }
 
     @Transactional
@@ -641,11 +656,7 @@ class BookController {
         JSONObject responseObj = new JSONObject();
 
         try{
-
             def book = Book.findById(params.bookId)
-
-            println 'book'+book
-
             PickupLocation.findAll().each {it.delete(flush:true, failOnError:true)}
             Request.findAll().each {it.delete(flush:true, failOnError:true)}
             Tags.findAllByBook(book).each {it.delete(flush:true, failOnError:true)}
@@ -745,24 +756,53 @@ class BookController {
     }
 
     def getCityTags(){
-        def locat  = PickupLocation.findAllByCity( params.city )
-        println '***'+locat
-//        def tags =  Tags.findAllByLocation(locat);
-
-        def tags = [];
-        locat.each {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("tag", Tags.findByLocation(it).tags )
-                    tags.push( jsonObject )
+        initiateJSONParameters()
+        validateCityTagsFields()
+        if(jsonErrors?.size() == 0){
+            def locations = PickupLocation.findAllByCity(params.city)
+            def tagList = Tags.findAllByLocationInList(locations)
+            Map hashMap = new HashMap()
+            tagList.each{
+                hashMap.put(it?.tags, it?.tags?:"")
+            }
+            ArrayList uniqueTags = new ArrayList()
+            hashMap.each {
+                uniqueTags.add(it?.value?:"")
+            }
+            Map tags = new HashMap<String, Object>()
+            tags.put("tags", uniqueTags)
+            if(uniqueTags.size() > 0) {
+                jsonStatus = true
+                jsonResponse.push(tags)
+            }else{
+                jsonErrors.push("No tags found")
+                jsonStatus = false
+            }
         }
-        render tags as JSON
+        renderResponse()
+/*
+        def tags = [];
+        locations.each {
+            def tagList = Tags.findAllByLocation(it)
+            tagList.each{
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("tag", it?.tags)
+                tags.push( jsonObject )
+            }
+        }
+*/
+        //render tags as JSON
+    }
 
+    def validateCityTagsFields(){
+        if(!params.city){
+            jsonErrors.push("Please provide city")
+        }
     }
 //    book = Book.findAllByCategoryAndIsCompleted(category, false, [max: 10, offset: offset]);
 
 
     def getBookListByCity() {
-
         HashMap jsonMap = new HashMap()
         def bookList = [];
         if(params.offset){
@@ -785,6 +825,7 @@ class BookController {
             }
         }
         jsonMap = bookHelperService.getBookHasMap(bookList)
+        jsonMap.sort{a,b->b.dateCreated<=>a.dateCreated}
         render jsonMap as JSON
 
     }
@@ -804,7 +845,6 @@ class BookController {
                 book = Book.findByIdAndIsCompletedAndCategory(it.book.id, false, category)
                 bookList.push(book)
             }
-
         }else{
             def books = PickupLocation.findAllByCity(params.city)
             println "----"+ books
@@ -816,6 +856,20 @@ class BookController {
         }
         jsonMap = bookHelperService.getBookHasMap(bookList)
         render jsonMap as JSON
+    }
 
+    private void initiateJSONParameters(){
+        jsonObject = new JSONObject()
+        jsonErrors = new ArrayList()
+        jsonStatus = new ArrayList()
+        jsonResponse = new ArrayList()
+        jsonRequest = new ArrayList()
+    }
+
+    def renderResponse(){
+        jsonObject.put("status", jsonStatus)
+        jsonObject.put("errorList", jsonErrors)
+        jsonObject.put("response", jsonResponse)
+        render jsonObject as JSON
     }
 }
