@@ -599,28 +599,33 @@ class BookController {
                 }else {
                     bookList = Book.findAllByIdInList(locations?.book?.id)
                 }
-            }
+            }else{
+				bookList = []
+			}
         }
         if( params.shared){
             isParamsFound = true
             if(params.category || params.city) {
                 bookList = Book.findAllByIdInListAndIsCompletedAndIsShared(bookList?.id, false, true);
-            }
-            bookList = Book.findAllByIsCompletedAndIsShared(false, true);
+            }else{
+				bookList = Book.findAllByIsCompletedAndIsShared(false, true);
+			}
         }
         if( params.onsell){
             isParamsFound = true
             if(params.category || params.city) {
                 bookList = Book.findAllByIdInListAndIsCompletedAndIsOnSell(bookList?.id, false, true);
-            }
-            bookList = Book.findAllByIsCompletedAndIsOnSell(false, true);
+            }else{
+				bookList = Book.findAllByIsCompletedAndIsOnSell(false, true);
+			}
         }
         if( params.donated){
             isParamsFound = true
             if(params.category || params.city) {
                 bookList = Book.findAllByIdInListAndIsCompletedAndIsDonated(bookList?.id, false, true);
-            }
-            bookList = Book.findAllByIsCompletedAndIsDonated(false, true);
+            }else{
+				bookList = Book.findAllByIsCompletedAndIsDonated(false, true);
+			}
         }
 
         if(!isParamsFound){
@@ -652,9 +657,9 @@ class BookController {
 
         try{
             def book = Book.findById(params.bookId)
+			Tags.findAllByBook(book).each {it.delete(flush:true, failOnError:true)}
             PickupLocation.findAll().each {it.delete(flush:true, failOnError:true)}
             Request.findAll().each {it.delete(flush:true, failOnError:true)}
-            Tags.findAllByBook(book).each {it.delete(flush:true, failOnError:true)}
 
             if(book.delete(flush: true, failOnError: true)){
             }
