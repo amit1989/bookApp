@@ -398,29 +398,22 @@ class BookController {
     }
 
     def getUserWishList(){
-
         JSONObject booksobject = new JSONObject()
         JSONArray array = new JSONArray()
         def user = Book.getUserIDByToken(params.token);
-        println 'Book List'+user
         def wishListInstance = WishList.findAllByUser(user)
-
-
         if(wishListInstance){
-
             for(int i = 0; i< wishListInstance.size(); i++){
-                String book= wishListInstance.get(i).getBookRef();
+                String book = wishListInstance.get(i).getBookRef();
                 println("Book :"+book)
                 Book bookInstance = Book.findById(book);
                 if(bookInstance != null){
                     JSONObject object = bookHelperService.getBookAsJson(bookInstance)
                     array.putAt(i,object)
                 }
-                println '-----------'+ array
             }
             booksobject.put("books", array)
             render booksobject  as JSON
-
         }
     }
 
@@ -677,36 +670,51 @@ class BookController {
             obj.put("success", responseObj)
             render obj as JSON
         }
-
     }
 
     //http://localhost:8080/bookApp/book/addCustomTag?bookId=8&tags=kdk&pickupId=
     @Transactional
     def addCustomTag(){
-
-        JSONObject obj = new JSONObject();
-        JSONObject responseObj = new JSONObject();
-
-        try {
-
-            Tags tags = new Tags(params);
-
-            tags.location = PickupLocation.findById(params.pickupId)
-            tags.book = Book.findById(params.bookId)
-
-            if(tags.save( flush:true, failOnError: true )){
-
-                responseObj.put("message", "Tag Added");
-                obj.put("success", responseObj)
-                render obj as JSON
+        initiateJSONParameters()
+        addCustomTagFields()
+        if(jsonErrors?.size() == 0){
+            if(params.tags){
+                def tagList = params.tags.toString().split(",")
+                tagList.each {
+                    Tags tags = new Tags()
+                    tags.book = params.book
+                    tags.location = params.location
+                    tags.tags = it
+                    tags.save(flus:true, failOnError: true)
+                }
+                jsonStatus = true
+                jsonResponse.push("tag(s) added")
             }
+        }
+        renderResponse()
+    }
 
-        }catch (Exception e){
-            e.printStackTrace()
-            responseObj.put("message", "failed to Add Tag");
-            responseObj.put("exception", e.getMessage());
-            obj.put("error", responseObj)
-            render obj as JSON
+    def addCustomTagFields(){
+        def book
+        def location
+        if(!params.bookId){
+            jsonErrors.push("Book id is required")
+            return
+        }else{
+            book = Book.get(params.bookId)
+            if(!book){
+                jsonErrors.push("No book is associated with the given book id")
+                return
+            }
+            params.book = book
+        }
+        if(params.pickupId){
+            location = PickupLocation.get(params.pickupId)
+            if(!location){
+                jsonErrors.push("No location is associated with the given pickup location id")
+                return
+            }
+            params.location = location
         }
     }
 
@@ -742,7 +750,6 @@ class BookController {
 
         }
 
-
         for(int i=0; i < results.size(); i++ ){
 
             Book bookInstance = Book.findById(results.get(i).book.id);
@@ -767,33 +774,19 @@ class BookController {
             tagList.each{
                 hashMap.put(it?.tags, it?.tags?:"")
             }
-            ArrayList uniqueTags = new ArrayList()
             hashMap.each {
-                uniqueTags.add(it?.value?:"")
+                JSONObject obj = new JSONObject()
+                obj.put("tag", it?.value ?: "")
+                jsonResponse.push(obj)
             }
-            Map tags = new HashMap<String, Object>()
-            tags.put("tags", uniqueTags)
-            if(uniqueTags.size() > 0) {
+            if(hashMap.size() > 0) {
                 jsonStatus = true
-                jsonResponse.push(tags)
             }else{
                 jsonErrors.push("No tags found")
                 jsonStatus = false
             }
         }
         renderResponse()
-/*
-        def tags = [];
-        locations.each {
-            def tagList = Tags.findAllByLocation(it)
-            tagList.each{
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("tag", it?.tags)
-                tags.push( jsonObject )
-            }
-        }
-*/
-        //render tags as JSON
     }
 
     def validateCityTagsFields(){
@@ -801,41 +794,28 @@ class BookController {
             jsonErrors.push("Please provide city")
         }
     }
-//    book = Book.findAllByCategoryAndIsCompleted(category, false, [max: 10, offset: offset]);
-
 
     def getBookListByCity() {
         HashMap jsonMap = new HashMap()
-        def bookList = [];
+        def bookList = new HashMap()
         if(params.offset){
             def offset = Integer.parseInt( params.offset  )* 10;
-            def books = PickupLocation.findAllByCity(params.city ,[ max: 10, offset: offset])
-            println "----"+ books
-            def book;
-            books.each {
-                book = Book.findByIdAndIsCompleted(it.book.id, false)
-                bookList.push(book)
+            def locations = PickupLocation.findAllByCity(params.city ,[ max: 10, offset: offset])
+            locations.each {
+                bookList.put(it?.book?.id, it.book)
             }
-
         }else{
-            def books = PickupLocation.findAllByCity(params.city)
-            println "----"+ books
-            def book;
-            books.each {
-                book = Book.findByIdAndIsCompleted(it.book.id, false)
-                bookList.push(book)
+            def locations = PickupLocation.findAllByCity(params.city)
+            locations.each {
+                bookList.put(it?.book?.id, it?.book)
             }
         }
-        jsonMap = bookHelperService.getBookHasMap(bookList)
-        jsonMap.sort{a,b->b.dateCreated<=>a.dateCreated}
+        jsonMap = bookHelperService.getBookHasMap(bookList.values().sort{it.dateCreated})
         render jsonMap as JSON
-
     }
 
     def getBookListByCityAndCat() {
-
         Category category = Category.findByName(params.category)
-
         HashMap jsonMap = new HashMap()
         def bookList = [];
         if(params.offset){
