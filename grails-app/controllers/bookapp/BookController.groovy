@@ -117,52 +117,6 @@ class BookController {
         }
     }
 
-    //http://localhost:8080/bookApp/book/create_book?title=History&token=12125244
-    @Transactional
-    def create_book(){
-        initiateJSONParameters()
-        validateBookFields()
-        if(jsonErrors.size() == 0){
-            jsonStatus = true
-            Book book = new Book(params)
-            if(book.save(flush:true)){
-                jsonStatus = true
-				Map bookMap = new HashMap()
-                bookMap.put("bookId", book.getId())
-                jsonResponse.push(bookMap)
-            }
-        }
-        renderResponse()
-    }
-
-    def validateBookFields(){
-        if(!params.title){
-            jsonErrors.push("book title cannot be empty")
-        }
-        if(params.token) {
-            def user = Book.getUserIDByToken(params.token)
-            params.user = user
-        }
-        if(params.categoryId){
-            params.category = Category.findById(params.categoryId)
-        }
-        if(params.image) {
-            if (request?.getFile('image')) {
-                try {
-                    def uploadedFile = request.getFile('image')
-                    def webRootDir = servletContext.getRealPath("/")
-                    def userDir = new File(webRootDir, "/images/books")
-                    userDir.mkdirs()
-                    String fileName = Book.getTimeStamp() + user.userToken + ".jpg"
-                    uploadedFile.transferTo(new File(userDir, fileName))
-                    params.imageUrl = fileName
-                }catch(Exception e){
-                    jsonErrors.push("Error occured while saving book image")
-                }
-            }
-        }
-    }
-
     @Transactional
     def markComplete(){
 
@@ -579,77 +533,6 @@ class BookController {
         bookHelperService.prepareAndroidNotification(gcm, requestType, details)
     }
 
-    def getBookList(){
-        boolean isParamsFound = false
-        def bookList
-        if(params.category){
-            isParamsFound = true
-            def categories = Category.findAllByName(params.category)
-            if(categories){
-                bookList = Book.findAllByCategoryInList(categories)
-            }
-        }
-        if(params.city){
-            isParamsFound = true
-            def locations = PickupLocation.findAllByCity(params.city)
-            if(locations){
-                if(params.category) {
-                    def categories = Category.findAllByName(params.category)
-                    bookList = Book.findAllByCategoryInListAndIdInList(categories, locations?.book?.id)
-                }else {
-                    bookList = Book.findAllByIdInList(locations?.book?.id)
-                }
-            }else{
-				bookList = []
-			}
-        }
-        if( params.shared){
-            isParamsFound = true
-            if(params.category || params.city) {
-                bookList = Book.findAllByIdInListAndIsCompletedAndIsShared(bookList?.id, false, true);
-            }else{
-				bookList = Book.findAllByIsCompletedAndIsShared(false, true);
-			}
-        }
-        if( params.onsell){
-            isParamsFound = true
-            if(params.category || params.city) {
-                bookList = Book.findAllByIdInListAndIsCompletedAndIsOnSell(bookList?.id, false, true);
-            }else{
-				bookList = Book.findAllByIsCompletedAndIsOnSell(false, true);
-			}
-        }
-        if( params.donated){
-            isParamsFound = true
-            if(params.category || params.city) {
-                bookList = Book.findAllByIdInListAndIsCompletedAndIsDonated(bookList?.id, false, true);
-            }else{
-				bookList = Book.findAllByIsCompletedAndIsDonated(false, true);
-			}
-        }
-
-        if(!isParamsFound){
-            bookList = Book.list()
-        }
-        return bookList
-    }
-
-    def filterBook(){
-        initiateJSONParameters()
-        def books = getBookList()
-        def bookList
-        if(books) {
-            bookList = bookHelperService.getBookHasMap(books)
-        }else{
-            jsonErrors.push("No books found")
-        }
-        if(jsonErrors.size() == 0){
-            jsonStatus = true
-            jsonResponse.push(bookList)
-        }
-        renderResponse()
-    }
-
     @Transactional
     def removeUserBook(){
         JSONObject obj = new JSONObject();
@@ -657,9 +540,9 @@ class BookController {
 
         try{
             def book = Book.findById(params.bookId)
-			Tags.findAllByBook(book).each {it.delete(flush:true, failOnError:true)}
             PickupLocation.findAll().each {it.delete(flush:true, failOnError:true)}
             Request.findAll().each {it.delete(flush:true, failOnError:true)}
+            Tags.findAllByBook(book).each {it.delete(flush:true, failOnError:true)}
 
             if(book.delete(flush: true, failOnError: true)){
             }
@@ -677,50 +560,27 @@ class BookController {
         }
     }
 
-    //http://localhost:8080/bookApp/book/addCustomTag?bookId=8&tags=kdk&pickupId=
-    @Transactional
-    def addCustomTag(){
+    def getLatestBooks(){
+        String query = "from PickupLocation location WHERE location.city=:city ORDER BY location.book.dateCreated desc"
         initiateJSONParameters()
-        addCustomTagFields()
-        if(jsonErrors?.size() == 0){
-            if(params.tags){
-                def tagList = params.tags.toString().split(",")
-                tagList.each {
-                    Tags tags = new Tags()
-                    tags.book = params.book
-                    tags.location = params.location
-                    tags.tags = it
-                    tags.save(flus:true, failOnError: true)
-                }
-                jsonStatus = true
-                jsonResponse.push("tag(s) added")
-            }
-        }
-        renderResponse()
-    }
+        def bookList
 
-    def addCustomTagFields(){
-        def book
-        def location
-        if(!params.bookId){
-            jsonErrors.push("Book id is required")
-            return
+        if(params.city){
+            def locations
+            locations = PickupLocation.findAll(query, [city:params.city], [max:3])
+            bookList = locations?.book
         }else{
-            book = Book.get(params.bookId)
-            if(!book){
-                jsonErrors.push("No book is associated with the given book id")
-                return
-            }
-            params.book = book
+                bookList = Book.list([max:3, order: 'desc', sort:'dateCreated'])
         }
-        if(params.pickupId){
-            location = PickupLocation.get(params.pickupId)
-            if(!location){
-                jsonErrors.push("No location is associated with the given pickup location id")
-                return
-            }
-            params.location = location
+
+        println "bookList: " + bookList
+
+        if(jsonErrors.size() == 0){
+            jsonStatus = true
+            jsonResponse.push(bookHelperService.getBookHasMap(bookList))
         }
+
+        renderResponse()
     }
 
     def retriveBookTag(){
@@ -745,78 +605,40 @@ class BookController {
     }
 
     def searchByTag(){
-
         JSONObject booksobject = new JSONObject()
-        JSONArray array = new JSONArray();
-
-        def books = Tags.createCriteria()
-        def results = books.list {
-            like("tags", params.tags+"%")
-
+        Map array = new HashMap();
+        String query
+        def tagList
+        params.sort = "tag.book.dateCreated"
+        params.order = "desc"
+        if(params.city){
+            query = "from Tags tag where tag.location.city=:city"
+            tagList = Tags.findAll(query, [city: params.city], [sort:params.sort])
         }
-
-        for(int i=0; i < results.size(); i++ ){
-
-            Book bookInstance = Book.findById(results.get(i).book.id);
-            println '---'+results.get(i).book.title
-            if(bookInstance != null){
-                JSONObject object = bookHelperService.getBookAsJson(bookInstance)
-                array.putAt(i,object)
-            }
-        }
-
-            booksobject.put("books", array)
-            render booksobject  as JSON
-    }
-
-    def getCityTags(){
-        initiateJSONParameters()
-        validateCityTagsFields()
-        if(jsonErrors?.size() == 0){
-            def locations = PickupLocation.findAllByCity(params.city)
-            def tagList = Tags.findAllByLocationInList(locations)
-            Map hashMap = new HashMap()
-            tagList.each{
-                hashMap.put(it?.tags, it?.tags?:"")
-            }
-            hashMap.each {
-                JSONObject obj = new JSONObject()
-                obj.put("tag", it?.value ?: "")
-                jsonResponse.push(obj)
-            }
-            if(hashMap.size() > 0) {
-                jsonStatus = true
+        if(params.tags){
+            if(query){
+                query += " and tag.tags=:tags"
+                tagList = Tags.findAll(query, [city: params.city, tags: params.tags])
             }else{
-                jsonErrors.push("No tags found")
-                jsonStatus = false
+                query += "from Tags tag where tag.tags=:tags"
+                tagList = Tags.findAll(query, [tags: params.tags])
             }
         }
-        renderResponse()
-    }
+        if(!params.city && !params.tags){
+            tagList = Tags.findAll("from Tags tags", [], [sort:params.sort, order:params.order])
+        }
 
-    def validateCityTagsFields(){
-        if(!params.city){
-            jsonErrors.push("Please provide city")
-        }
-    }
-
-    def getBookListByCity() {
-        HashMap jsonMap = new HashMap()
-        def bookList = new HashMap()
-        if(params.offset){
-            def offset = Integer.parseInt( params.offset  )* 10;
-            def locations = PickupLocation.findAllByCity(params.city ,[ max: 10, offset: offset])
-            locations.each {
-                bookList.put(it?.book?.id, it.book)
-            }
-        }else{
-            def locations = PickupLocation.findAllByCity(params.city)
-            locations.each {
-                bookList.put(it?.book?.id, it?.book)
+        tagList.each {
+            if(it?.book){
+                array.put(it?.book?.id, bookHelperService.getBookAsJson(it?.book))
             }
         }
-        jsonMap = bookHelperService.getBookHasMap(bookList.values().sort{it.dateCreated})
-        render jsonMap as JSON
+        def books = []
+        array.each {
+            books.push(it?.getValue())
+        }
+        booksobject.put("books", books)
+        render booksobject  as JSON
     }
 
     def getBookListByCityAndCat() {
@@ -843,6 +665,300 @@ class BookController {
         }
         jsonMap = bookHelperService.getBookHasMap(bookList)
         render jsonMap as JSON
+    }
+
+    /*
+     * url to access:
+     * http://localhost:8080/bookApp/book/getBookListByCity
+     *              (or)
+     * http://localhost:8080/bookApp/book/getBookListByCity?offset=0/1/etc...
+     *              (or)
+     * http://localhost:8080/bookApp/book/getBookListByCity?city=pune/etc...
+     *              (or)
+     * http://localhost:8080/bookApp/book/getBookListByCity?city=pune?offset=0/1/etc...
+     */
+    def getBookListByCity() {
+        initiateJSONParameters()
+
+        def bookList = new HashMap()
+        def locations
+
+        if(params.city){
+            if(params.offset) {
+                def offset = Integer.parseInt(params.offset) * 10;
+                locations = PickupLocation.findAllByCity(params.city, [max: 10, offset: offset])
+            }else{
+                locations = PickupLocation.findAllByCity(params.city)
+            }
+        }else{
+            if(params.offset) {
+                def offset = Integer.parseInt( params.offset  )* 10;
+                locations = PickupLocation.list([max: 10, offset: offset])
+            }else{
+                locations = PickupLocation.list()
+            }
+        }
+
+        locations.each {
+            bookList.put(it?.book?.id, it.book)
+        }
+
+        def books = bookHelperService.getBookHasMap(bookList.values())
+
+        if(jsonErrors.size() == 0) {
+            jsonStatus = true
+            jsonResponse.push(books)
+        }
+
+        renderResponse()
+    }//end of getBookListByCity
+
+
+    /*
+     * url to access:
+     * http://localhost:8080/bookApp/book/getCityTags?city=pune/etc...
+     *              (or)
+     * http://localhost:8080/bookApp/book/getCityTags?city=pune?offset=0/1/etc...
+     */
+    def getCityTags(){
+
+        Map hashMap = new HashMap()
+        initiateJSONParameters()
+        validateCityTagsFields()
+
+        if(jsonErrors?.size() == 0){
+
+            def locations = PickupLocation.findAllByCity(params.city)
+            def tagList
+
+            if(params.offset) {
+                def offset = Integer.parseInt(params.offset) * 10;
+                tagList = Tags.findAllByLocationInList(locations, [ max: 10, offset: offset])
+            }else{
+                tagList = Tags.findAllByLocationInList(locations)
+            }
+
+            tagList.each{
+                hashMap.put(it?.tags, it?.tags?:"")
+            }
+
+            hashMap.each {
+                JSONObject obj = new JSONObject()
+                obj.put("tag", it?.value ?: "")
+                jsonResponse.push(obj)
+            }
+
+            if(hashMap.size() > 0) {
+                jsonStatus = true
+            }else{
+                jsonErrors.push("No tags found")
+                jsonStatus = false
+            }
+        }
+
+        renderResponse()
+    }//end of getCityTags
+
+
+    //validate parameters to get city tags
+    def validateCityTagsFields(){
+        if(!params.city){
+            jsonErrors.push("Please provide city")
+        }
+    }//end of validateCityTagsFields
+
+    /*
+     * url to access:
+     * http://localhost:8080/bookApp/book/filterBook
+     */
+    def filterBook(){
+        initiateJSONParameters()
+        def books = getBookList()
+        def bookList
+
+        if(books) {
+            bookList = bookHelperService.getBookHasMap(books)
+        }else{
+            jsonErrors.push("No books found")
+        }
+
+        if(jsonErrors.size() == 0){
+            jsonStatus = true
+            jsonResponse.push(bookList)
+        }
+
+        renderResponse()
+    }//end of filterBook
+
+    //get list of all books by category, city, shared, onsell, donated
+    def getBookList(){
+        boolean isParamsFound = false
+        def bookList
+
+        if(params.category){
+            isParamsFound = true
+            def categories = Category.findAllByName(params.category)
+            if(categories){
+                bookList = Book.findAllByCategoryInList(categories)
+            }
+        }
+
+        if(params.city){
+            isParamsFound = true
+            def locations = PickupLocation.findAllByCity(params.city)
+            if(locations){
+                if(params.category) {
+                    def categories = Category.findAllByName(params.category)
+                    println "categories: " +categories
+                    bookList = Book.findAllByCategoryInListAndIdInList(categories, locations?.book?.id)
+                }else {
+                    bookList = Book.findAllByIdInList(locations?.book?.id)
+                }
+            }else{
+                bookList = []
+            }
+        }
+
+        if( params.shared){
+            isParamsFound = true
+            if(params.category || params.city) {
+                bookList = Book.findAllByIdInListAndIsCompletedAndIsShared(bookList?.id, false, true);
+            }else{
+                bookList = Book.findAllByIsCompletedAndIsShared(false, true);
+            }
+        }
+
+        if( params.onsell){
+            isParamsFound = true
+            if(params.category || params.city) {
+                bookList = Book.findAllByIdInListAndIsCompletedAndIsOnSell(bookList?.id, false, true);
+            }else{
+                bookList = Book.findAllByIsCompletedAndIsOnSell(false, true);
+            }
+        }
+
+        if( params.donated){
+            isParamsFound = true
+            if(params.category || params.city) {
+                bookList = Book.findAllByIdInListAndIsCompletedAndIsDonated(bookList?.id, false, true);
+            }else{
+                bookList = Book.findAllByIsCompletedAndIsDonated(false, true);
+            }
+        }
+
+        if(!isParamsFound){
+            bookList = Book.list()
+        }
+
+        if(params.offset) {
+            def offset = Integer.parseInt( params.offset  )* 10;
+            return Book.findAllByIdInList(bookList?.id, [ max: 10, offset: offset])
+        }
+
+        return bookList
+    }//end of getBookList
+
+    /* url to access
+     * http://localhost:8080/bookApp/book/create_book?title=History&token=12125244
+     */
+    @Transactional
+    def create_book(){
+        initiateJSONParameters()
+        validateBookFields()
+        if(jsonErrors.size() == 0){
+            jsonStatus = true
+            Book book = new Book(params)
+            if(book.save(flush:true)){
+                jsonStatus = true
+                Map bookMap = new HashMap()
+                bookMap.put("bookId", book.getId())
+                jsonResponse.push(bookMap)
+            }
+        }
+        renderResponse()
+    }//end of create_book
+
+    def validateBookFields(){
+        if(!params.title){
+            jsonErrors.push("book title cannot be empty")
+        }
+        if(params.token) {
+            def user = Book.getUserIDByToken(params.token)
+            params.user = user
+        }
+        if(params.categoryId){
+            params.category = Category.findById(params.categoryId)
+        }
+        if(params.image) {
+            if (request?.getFile('image')) {
+                try {
+                    def uploadedFile = request.getFile('image')
+                    def webRootDir = servletContext.getRealPath("/")
+                    def userDir = new File(webRootDir, "/images/books")
+                    userDir.mkdirs()
+                    String fileName = Book.getTimeStamp() + user.userToken + ".jpg"
+                    uploadedFile.transferTo(new File(userDir, fileName))
+                    params.imageUrl = fileName
+                }catch(Exception e){
+                    jsonErrors.push("Error occured while saving book image")
+                }
+            }
+        }
+    }
+
+    /*
+     * url to access
+     * http://localhost:8080/bookApp/book/addCustomTag?bookId=8&tags=kdk&pickupId=
+     */
+    @Transactional
+    def addCustomTag(){
+        initiateJSONParameters()
+        addCustomTagFields()
+
+        if(jsonErrors?.size() == 0){
+            if(params.tags){
+                def tagList = params.tags.toString().split(",")
+
+                tagList.each {
+                    Tags tags = new Tags()
+                    tags.book = params.book
+                    tags.location = params.location
+                    tags.tags = it
+                    tags.save(flus:true, failOnError: true)
+                }
+
+                jsonStatus = true
+                jsonResponse.push("tag(s) added")
+            }
+        }
+
+        renderResponse()
+    }//end of addCustomTag
+
+    def addCustomTagFields(){
+        def book
+        def location
+
+        if(!params.bookId){
+            jsonErrors.push("Book id is required")
+            return
+        }else{
+            book = Book.get(params.bookId)
+            if(!book){
+                jsonErrors.push("No book is associated with the given book id")
+                return
+            }
+            params.book = book
+        }
+
+        if(params.pickupId){
+            location = PickupLocation.get(params.pickupId)
+            if(!location){
+                jsonErrors.push("No location is associated with the given pickup location id")
+                return
+            }
+            params.location = location
+        }
     }
 
     private void initiateJSONParameters(){
