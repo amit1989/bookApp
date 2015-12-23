@@ -535,29 +535,29 @@ class BookController {
 
     @Transactional
     def removeUserBook(){
-        JSONObject obj = new JSONObject();
-        JSONObject responseObj = new JSONObject();
-
+        initiateJSONParameters()
         try{
-            def book = Book.findById(params.bookId)
-            PickupLocation.findAll().each {it.delete(flush:true, failOnError:true)}
-            Request.findAll().each {it.delete(flush:true, failOnError:true)}
-            Tags.findAllByBook(book).each {it.delete(flush:true, failOnError:true)}
+            if(params.bookId) {
+                def book = Book.findById(params.bookId)
+                if(book) {
+                    PickupLocation.findAllByBook(book).each { it.delete(flush: true, failOnError: true) }
+                    Request.findAllByBook(book).each { it.delete(flush: true, failOnError: true) }
+                    Tags.findAllByBook(book).each { it.delete(flush: true, failOnError: true) }
 
-            if(book.delete(flush: true, failOnError: true)){
+                    book.delete(flush: true, failOnError: true)
+                    jsonResponse.push("book deleted successfully")
+                    jsonStatus = true
+                }else{
+                    jsonErrors.push("There is no book associated with the provided bookId")
+                }
+            }else{
+                jsonErrors.push("bookId cannot be empty")
             }
 
-                responseObj.put("message", "book Deleted");
-                obj.put("success", responseObj)
-                render obj as JSON
-
-
         }catch (Exception e){
-            responseObj.put("message", "failed");
-            responseObj.put("exception", e.getMessage());
-            obj.put("success", responseObj)
-            render obj as JSON
+            jsonErrors.push("Error occured while deleting. Details: " + e.getMessage())
         }
+        renderResponse()
     }
 
     def getLatestBooks(){
@@ -868,7 +868,22 @@ class BookController {
         if(jsonErrors.size() == 0){
             jsonStatus = true
             Book book = new Book(params)
+            UserTable user = params.user
             if(book.save(flush:true)){
+                if (params.image && request.getFile('image')) {
+                    try {
+                        def uploadedFile = request.getFile('image')
+                        def webRootDir = servletContext.getRealPath("/")
+                        def userDir = new File(webRootDir, "/images/books")
+                        userDir.mkdirs()
+                        String fileName = Book.getTimeStamp() + user.userToken + ".jpg"
+                        uploadedFile.transferTo(new File(userDir, fileName))
+                        book.imageUrl = webRootDir.toString().replaceAll("\\\\", "/") + "/images/books/" + fileName
+                        book.save(flush:true)
+                    }catch(Exception e){
+                        jsonErrors.push("Error occured while saving book image" + e.printStackTrace())
+                    }
+                }
                 jsonStatus = true
                 Map bookMap = new HashMap()
                 bookMap.put("bookId", book.getId())
@@ -883,26 +898,18 @@ class BookController {
             jsonErrors.push("book title cannot be empty")
         }
         if(params.token) {
-            def user = Book.getUserIDByToken(params.token)
-            params.user = user
+            def user = UserTable.findByUserToken(params.token)
+            if(user){
+                params.user = user
+            }else{
+                jsonErrors.push("No user exist with the provided token")
+            }
+        }else{
+            jsonErrors.push("token cannot be empty")
         }
+
         if(params.categoryId){
             params.category = Category.findById(params.categoryId)
-        }
-        if(params.image) {
-            if (request?.getFile('image')) {
-                try {
-                    def uploadedFile = request.getFile('image')
-                    def webRootDir = servletContext.getRealPath("/")
-                    def userDir = new File(webRootDir, "/images/books")
-                    userDir.mkdirs()
-                    String fileName = Book.getTimeStamp() + user.userToken + ".jpg"
-                    uploadedFile.transferTo(new File(userDir, fileName))
-                    params.imageUrl = fileName
-                }catch(Exception e){
-                    jsonErrors.push("Error occured while saving book image")
-                }
-            }
         }
     }
 
