@@ -30,7 +30,7 @@ class Book {
     Integer discount
     String bookEdition
     String yearOfBook
-    Boolean isCompleted
+    Boolean isCompleted = false
     String onCondition
     Integer shareCount
     UserTable user

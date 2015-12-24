@@ -351,25 +351,39 @@ class BookController {
 
     }
 
+    /*
+     * url to access
+     * http://localhost:8080/bookApp/book/getUserWishList?token=1444739497970
+     */
     def getUserWishList(){
-        JSONObject booksobject = new JSONObject()
-        JSONArray array = new JSONArray()
-        def user = Book.getUserIDByToken(params.token);
-        def wishListInstance = WishList.findAllByUser(user)
-        if(wishListInstance){
-            for(int i = 0; i< wishListInstance.size(); i++){
-                String book = wishListInstance.get(i).getBookRef();
-                println("Book :"+book)
-                Book bookInstance = Book.findById(book);
-                if(bookInstance != null){
-                    JSONObject object = bookHelperService.getBookAsJson(bookInstance)
-                    array.putAt(i,object)
+        initiateJSONParameters()
+        ArrayList array = new ArrayList()
+        if(params.token) {
+            def user = Book.getUserIDByToken(params.token);
+            if(!user){
+                jsonErrors.push("There is no user associated with the provided token")
+            }else{
+                def wishListInstance = WishList.findAllByUser(user)
+                if(wishListInstance){
+                    for(int i = 0; i< wishListInstance.size(); i++){
+                        String book = wishListInstance.get(i).getBookRef();
+                        Book bookInstance = Book.findById(book);
+                        if(bookInstance != null){
+                            JSONObject object = bookHelperService.getBookAsJson(bookInstance)
+                            array.putAt(i,object)
+                        }
+                    }
+                    jsonStatus = true
+                    jsonResponse.push(array)
+                }else{
+                    jsonErrors.push("no wishtlist found")
                 }
             }
-            booksobject.put("books", array)
-            render booksobject  as JSON
+        }else{
+            jsonErrors.push("token cannot be empty")
         }
-    }
+        renderResponse()
+    }//end of getUserWishtList
 
     //will get bookId, UserId, As Params
     @Transactional
@@ -540,9 +554,9 @@ class BookController {
             if(params.bookId) {
                 def book = Book.findById(params.bookId)
                 if(book) {
+                    Tags.findAllByBook(book).each { it.delete(flush: true, failOnError: true) }
                     PickupLocation.findAllByBook(book).each { it.delete(flush: true, failOnError: true) }
                     Request.findAllByBook(book).each { it.delete(flush: true, failOnError: true) }
-                    Tags.findAllByBook(book).each { it.delete(flush: true, failOnError: true) }
 
                     book.delete(flush: true, failOnError: true)
                     jsonResponse.push("book deleted successfully")
@@ -613,19 +627,39 @@ class BookController {
         params.order = "desc"
         if(params.city){
             query = "from Tags tag where tag.location.city=:city"
-            tagList = Tags.findAll(query, [city: params.city], [sort:params.sort])
+            if(params.offset){
+                def offset = Integer.parseInt( params.offset  )* 10;
+                tagList = Tags.findAll(query, [city: params.city], [sort:params.sort, max:10, offset:params.offset])
+            }else{
+                tagList = Tags.findAll(query, [city: params.city], [sort:params.sort])
+            }
         }
         if(params.tags){
             if(query){
                 query += " and tag.tags=:tags"
-                tagList = Tags.findAll(query, [city: params.city, tags: params.tags])
+                if(params.offset) {
+                    def offset = Integer.parseInt(params.offset) * 10;
+                    tagList = Tags.findAll(query, [city: params.city, tags: params.tags],[max:10, offset:params.offset])
+                }else{
+                    tagList = Tags.findAll(query, [city: params.city, tags: params.tags])
+                }
             }else{
                 query += "from Tags tag where tag.tags=:tags"
-                tagList = Tags.findAll(query, [tags: params.tags])
+                if(params.offset) {
+                    def offset = Integer.parseInt(params.offset) * 10;
+                    tagList = Tags.findAll(query, [tags: params.tags],[max:10, offset:params.offset])
+                }else{
+                    tagList = Tags.findAll(query, [tags: params.tags])
+                }
             }
         }
         if(!params.city && !params.tags){
-            tagList = Tags.findAll("from Tags tags", [], [sort:params.sort, order:params.order])
+            if(params.offset) {
+                def offset = Integer.parseInt(params.offset) * 10;
+                tagList = Tags.findAll("from Tags tags", [], [sort:params.sort, order:params.order], [max:10, offset:params.offset])
+            }else{
+                tagList = Tags.findAll("from Tags tags", [], [sort:params.sort, order:params.order])
+            }
         }
 
         tagList.each {
@@ -852,7 +886,9 @@ class BookController {
 
         if(params.offset) {
             def offset = Integer.parseInt( params.offset  )* 10;
-            return Book.findAllByIdInList(bookList?.id, [ max: 10, offset: offset])
+            return Book.findAllByIdInListAndIsCompleted(bookList?.id, false, [ max: 10, offset: offset])
+        }else{
+            return Book.findAllByIdInListAndIsCompleted(bookList?.id, false)
         }
 
         return bookList
@@ -878,7 +914,7 @@ class BookController {
                         userDir.mkdirs()
                         String fileName = Book.getTimeStamp() + user.userToken + ".jpg"
                         uploadedFile.transferTo(new File(userDir, fileName))
-                        book.imageUrl = webRootDir.toString().replaceAll("\\\\", "/") + "/images/books/" + fileName
+                        book.imageUrl = fileName
                         book.save(flush:true)
                     }catch(Exception e){
                         jsonErrors.push("Error occured while saving book image" + e.printStackTrace())
