@@ -1,7 +1,7 @@
 package bookapp
 
 class UserTable {
-
+	String name
     String userName;
     String email;
     String userToken;
@@ -10,6 +10,7 @@ class UserTable {
     String loginType;
 
     static constraints = {
+		name (nullable: true)
         userName(blank: false)
         email(blank: false)
         userToken(blank: false)
@@ -17,6 +18,4 @@ class UserTable {
         status(nullable: true)
         loginType(nullable: true)
     }
-
-
 }
