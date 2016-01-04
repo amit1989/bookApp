@@ -129,6 +129,7 @@ class UserTableController {
                 jsonResponse.push(jsonObject)
             }else {
                 UserTable user = new UserTable();
+				user.name = params.name
                 user.email = params.email;
                 user.userName = params.userName;
                 user.gcm = params.gcm;
@@ -197,6 +198,10 @@ class UserTableController {
             }
         }
 
+		if(!params.name){
+            jsonErrors.push("Name is not found")
+        }
+		
         if(!params.userName){
             jsonErrors.push("user name not found")
         }
@@ -222,6 +227,7 @@ class UserTableController {
             }else {
                 UserTable user = new UserTable();
                 user.email = params.email;
+				user.name = params.name;
                 user.userName = params.userName;
                 user.gcm = params.gcm;
                 user.loginType = params.loginType
