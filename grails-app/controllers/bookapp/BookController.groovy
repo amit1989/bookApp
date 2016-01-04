@@ -365,17 +365,16 @@ class BookController {
             }else{
                 def wishListInstance = WishList.findAllByUser(user)
                 if(wishListInstance && wishListInstance?.size() > 0){
-                    ArrayList array = new ArrayList()
                     for(int i = 0; i< wishListInstance.size(); i++){
                         String book = wishListInstance.get(i).getBookRef();
                         Book bookInstance = Book.findById(book);
                         if(bookInstance != null){
                             JSONObject object = bookHelperService.getBookAsJson(bookInstance)
-                            array.putAt(i,object)
+                            jsonObject.putAt(i,object)
                         }
                     }
                     jsonStatus = true
-                    jsonResponse.push(array)
+                    jsonResponse.push(jsonObject)
                 }else{
                     jsonErrors.push("no wishtlist found")
                 }
