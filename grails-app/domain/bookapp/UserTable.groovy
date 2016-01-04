@@ -7,13 +7,15 @@ class UserTable {
     String userToken;
     String gcm;
     String status;
+    String loginType;
 
     static constraints = {
-        userName(blank: false, unique: true)
-        email(blank: false, unique: true)
+        userName(blank: false)
+        email(blank: false)
         userToken(blank: false)
         gcm(nullable: true)
         status(nullable: true)
+        loginType(nullable: true)
     }
 
 

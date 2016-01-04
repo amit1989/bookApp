@@ -8,6 +8,13 @@ import grails.transaction.Transactional
 
 @Transactional(readOnly = true)
 class UserTableController {
+    def userHelperService
+
+    JSONObject jsonObject
+    List jsonErrors
+    Boolean jsonStatus
+    List jsonResponse
+    List jsonRequest
 
     static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
 
@@ -103,48 +110,47 @@ class UserTableController {
         }
     }
 
-
-    def UserHelperService userHelperService
-
     @Transactional
     def createUser(){
-        JSONObject obj = new JSONObject();
+        initiateJSONParameters()
+        validateCreateUserParams()
+        if(jsonErrors?.size() == 0){
+            UserTable userold
 
-        try{
-
-            UserTable user = new UserTable();
-            user.email = params.email;
-            user.userName = params.userName;
-            user.gcm = params.gcm;
-            String token  = userHelperService.nextId();
-            user.userToken = token;
-
-            if(user.save( flush: true , failOnError: true)){
-                println('saving...........')
-
-                JSONObject responseObj = new JSONObject();
-                responseObj.put("userToken", token);
-                obj.put("success", responseObj)
-                render  obj as JSON;
+            if(params.loginType.toString().equals("facebook")) {
+                userold = UserTable.findByUserNameAndLoginType(params.userName, params.loginType);
             }else{
-                JSONObject responseObj = new JSONObject();
-                responseObj.put("error", "failed");
-                obj.put("error", responseObj)
-                render  obj as JSON;
+                userold = UserTable.findByEmailAndLoginType(params.email, params.loginType);
             }
 
-
-        }catch (Exception e){
-            JSONObject responseObj = new JSONObject();
-            responseObj.put("error", e.getMessage());
-            obj.put("error", responseObj)
-            render  obj as JSON;
+            if(userold){
+                jsonObject.put("userToken", userold.userToken)
+                jsonObject.put("message", "User Already Registered")
+                jsonResponse.push(jsonObject)
+            }else {
+                UserTable user = new UserTable();
+                user.email = params.email;
+                user.userName = params.userName;
+                user.gcm = params.gcm;
+                user.loginType = params.loginType
+                String token = UserHelperService.nextId();
+                user.userToken = token;
+                if (user.save(flush: true, failOnError: true)) {
+                    jsonObject.put("userToken", token)
+                    jsonResponse.push(jsonObject)
+                    jsonStatus = true
+                } else {
+                    jsonResponse.push("error occured while saving user");
+                }
+            }
         }
+        renderResponse()
     }
 
     def authenticateUserTable(){
-        JSONObject obj = new JSONObject();
-        if(UserTable.findByUserNameAndEmail(params.userName, params.email)){
+        initiateJSONParameters()
+        validateCreateUserParams()
+/*        if(UserTable.findByUserNameAndEmail(params.userName, params.email)){
             String token = UserTable.findByUserName(params.userName).userToken
 
             JSONObject responseObj = new JSONObject();
@@ -156,57 +162,95 @@ class UserTableController {
             responseObj.put("error","Check your user name and password");
             obj.put("error", responseObj)
             render  obj as JSON;
+        }*/
+
+        if(jsonErrors?.size() == 0){
+            UserTable userold
+
+            if(params.loginType.toString().equals("facebook")) {
+                userold = UserTable.findByUserNameAndLoginType(params.userName, params.loginType);
+            }else{
+                userold = UserTable.findByEmailAndLoginType(params.email, params.loginType);
+            }
+
+            if(userold){
+                jsonObject.put("userToken", userold.userToken)
+                jsonResponse.push("successfully logged in")
+                jsonStatus = true
+                jsonResponse.push(jsonObject)
+            }else {
+                jsonErrors.push("invalid login. Please check username and password combination")
+            }
+        }
+        renderResponse()
+
+    }
+
+    def validateCreateUserParams(){
+        if(!params.loginType){
+            jsonErrors.push("login type not found")
+        }
+
+        if(params.loginType && params.loginType.toString().equals("gmail")) {
+            if (!params.email) {
+                jsonErrors.push("email not found")
+            }
+        }
+
+        if(!params.userName){
+            jsonErrors.push("user name not found")
         }
     }
 
     @Transactional
     def createUser1(){
-        JSONObject obj = new JSONObject();
+        initiateJSONParameters()
+        validateCreateUserParams()
+        if(jsonErrors?.size() == 0){
+            UserTable userold
 
-        try{
-
-            UserTable userold =  UserTable.findByUserNameAndEmail(params.userName, params.email);
-            if(userold){
-                userold.gcm = params.gcm;
-                if(userold.save( flush: true , failOnError: true)){
-                    JSONObject responseObj = new JSONObject();
-                    responseObj.put("userToken", userold.userToken);
-                    responseObj.put("message", "Already Register");
-                    obj.put("success", responseObj)
-                    render  obj as JSON;
-                }
-
+            if(params.loginType.toString().equals("facebook")) {
+                userold = UserTable.findByUserNameAndLoginType(params.userName, params.loginType);
             }else{
+                userold = UserTable.findByEmailAndLoginType(params.email, params.loginType);
+            }
 
+            if(userold){
+                jsonObject.put("userToken", userold.userToken)
+                jsonObject.put("message", "User Already Registered")
+                jsonResponse.push(jsonObject)
+            }else {
                 UserTable user = new UserTable();
                 user.email = params.email;
                 user.userName = params.userName;
                 user.gcm = params.gcm;
-                String token  = UserHelperService.nextId();
+                user.loginType = params.loginType
+                String token = UserHelperService.nextId();
                 user.userToken = token;
-
-                if(user.save( flush: true , failOnError: true)){
-                    println('saving...........')
-
-                    JSONObject responseObj = new JSONObject();
-                    responseObj.put("userToken", token);
-                    obj.put("success", responseObj)
-                    render  obj as JSON;
-                }else{
-                    JSONObject responseObj = new JSONObject();
-                    responseObj.put("error", "failed");
-                    obj.put("error", responseObj)
-                    render  obj as JSON;
+                if (user.save(flush: true, failOnError: true)) {
+                    jsonObject.put("userToken", token)
+                    jsonResponse.push(jsonObject)
+                    jsonStatus = true
+                } else {
+                    jsonResponse.push("error occured while saving user");
                 }
             }
-
-
-
-        }catch (Exception e){
-            JSONObject responseObj = new JSONObject();
-            responseObj.put("error", e.getMessage());
-            obj.put("error", responseObj)
-            render  obj as JSON;
         }
+        renderResponse()
+    }
+
+    private void initiateJSONParameters(){
+        jsonObject = new JSONObject()
+        jsonErrors = new ArrayList()
+        jsonStatus = new ArrayList()
+        jsonResponse = new ArrayList()
+        jsonRequest = new ArrayList()
+    }
+
+    def renderResponse(){
+        jsonObject.put("status", jsonStatus)
+        jsonObject.put("errorList", jsonErrors)
+        jsonObject.put("response", jsonResponse)
+        render jsonObject as JSON
     }
 }
