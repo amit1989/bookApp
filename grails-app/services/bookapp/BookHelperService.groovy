@@ -1,7 +1,7 @@
 package bookapp
 
-//import com.google.android.gcm.server.MulticastResult
-//import com.google.android.gcm.server.Result
+import com.google.android.gcm.server.MulticastResult
+import com.google.android.gcm.server.Result
 import grails.transaction.Transactional
 import org.json.simple.JSONObject
 
