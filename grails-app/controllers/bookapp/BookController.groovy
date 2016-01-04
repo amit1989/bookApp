@@ -641,7 +641,7 @@ class BookController {
             query = "from Tags tag where tag.location.city=:city"
             if(params.offset){
                 def offset = Integer.parseInt( params.offset  )* 10;
-                tagList = Tags.findAll(query, [city: params.city], [sort:params.sort, max:10, offset:params.offset])
+                tagList = Tags.findAll(query, [city: params.city], [sort:params.sort, max:10, offset:offset])
             }else{
                 tagList = Tags.findAll(query, [city: params.city], [sort:params.sort])
             }
@@ -651,7 +651,7 @@ class BookController {
                 query += " and tag.tags=:tags"
                 if(params.offset) {
                     def offset = Integer.parseInt(params.offset) * 10;
-                    tagList = Tags.findAll(query, [city: params.city, tags: params.tags],[max:10, offset:params.offset])
+                    tagList = Tags.findAll(query, [city: params.city, tags: params.tags],[max:10, offset:offset])
                 }else{
                     tagList = Tags.findAll(query, [city: params.city, tags: params.tags])
                 }
@@ -659,7 +659,7 @@ class BookController {
                 query += "from Tags tag where tag.tags=:tags"
                 if(params.offset) {
                     def offset = Integer.parseInt(params.offset) * 10;
-                    tagList = Tags.findAll(query, [tags: params.tags],[max:10, offset:params.offset])
+                    tagList = Tags.findAll(query, [tags: params.tags],[max:10, offset:offset])
                 }else{
                     tagList = Tags.findAll(query, [tags: params.tags])
                 }
