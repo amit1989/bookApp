@@ -12,7 +12,7 @@ class UserTable {
     static constraints = {
 		name (nullable: true)
         userName(blank: false)
-        email(blank: false)
+        email(nullable: true)
         userToken(blank: false)
         gcm(nullable: true)
         status(nullable: true)

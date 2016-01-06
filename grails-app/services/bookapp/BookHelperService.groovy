@@ -145,6 +145,39 @@ class BookHelperService {
         return jsonMap;
     }
 
+    public JSONObject getBooksList(def bookList){
+        HashMap booksMap = new HashMap()
+        booksMap.books = bookList.collect { books ->
+            return [
+                "id"            : books?.id ?: "",
+                "title"         : books?.title ?: "",
+                "isbn"          : books?.isbn ?: "",
+                "discreption"   : books?.discreption ?: "",
+                "author"        : books?.author ?: "",
+                "image_url"     : books?.imageUrl ?: "",
+                "category"      : books?.category?.name ?: "",
+                "isShared"      : books?.isShared ?: "",
+                "isOnSell"      : books?.isOnSell ?: "",
+                "startDate"     : books?.startDate ?: "",
+                "isDonated"     : books?.isDonated ?: "",
+                "endDate"       : books?.endDate ?: "",
+                "originalCost"  : books?.originalCost ?: "",
+                "discount"      : books?.discount ?: "",
+                "bookEdition"   : books?.bookEdition ?: "",
+                "yearOfBook"    : books?.yearOfBook ?: "",
+                "isCompleted"   : books?.isCompleted ?: "",
+                "onCondition"   : books?.onCondition ?: "",
+                "dateCreated"   : books?.dateCreated ? new SimpleDateFormat("dd/MM/yyyy hh:MM:ss").format(books.dateCreated) : "",
+                "shareCount"    : books?.shareCount ?: "",
+                "imageName"     : books?.imageUrl ?: "",
+                "userName"      : books?.user?.userName ?: "",
+                "userEmail"     : books?.user?.email ?: ""
+            ]
+        }
+
+        return booksMap
+    }
+	
     public JSONObject getBookAsJson(Book books){
 
         JSONObject object = new JSONObject();

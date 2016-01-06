@@ -358,30 +358,34 @@ class BookController {
     def getUserWishList(){
         initiateJSONParameters()
         validateUserWishListParams()
+        def books
         if(jsonErrors?.size() == 0){
-            def user = Book.getUserIDByToken(params.token);
+            def user = UserTable.findByUserToken(params.token)
             if(!user){
                 jsonErrors.push("There is no user associated with the provided token")
             }else{
                 def wishListInstance = WishList.findAllByUser(user)
                 if(wishListInstance && wishListInstance?.size() > 0){
+                    def bookList = []
                     for(int i = 0; i< wishListInstance.size(); i++){
                         String book = wishListInstance.get(i).getBookRef();
                         Book bookInstance = Book.findById(book);
-                        if(bookInstance != null){
-                            JSONObject object = bookHelperService.getBookAsJson(bookInstance)
-                            jsonObject.putAt(i,object)
+                        if(bookInstance) {
+                            bookList.add(bookInstance)
                         }
                     }
+
+                    books = bookHelperService.getBooksList(bookList)
                     jsonStatus = true
-                    jsonResponse.push(jsonObject)
                 }else{
-                    jsonErrors.push("no wishtlist found")
+                    jsonErrors.push("no wishlist found")
                 }
             }
         }
 
-        renderResponse()
+        jsonObject.put("response", books)
+
+        render jsonObject as JSON
     }//end of getUserWishtList
 
     def validateUserWishListParams(){
@@ -580,16 +584,16 @@ class BookController {
     }
 
     def getLatestBooks(){
-        String query = "from PickupLocation location WHERE location.city=:city ORDER BY location.book.dateCreated desc"
+        String query = "from PickupLocation location WHERE location.city=:city and location.book.isCompleted=false ORDER BY location.book.dateCreated desc"
         initiateJSONParameters()
         def bookList
 
         if(params.city){
             def locations
-            locations = PickupLocation.findAll(query, [city:params.city], [max:3])
+            locations = PickupLocation.findAll(query, [city:params.city], [max:6])
             bookList = locations?.book
         }else{
-                bookList = Book.list([max:3, order: 'desc', sort:'dateCreated'])
+                bookList = Book.findAllByIsCompleted(false, [max:6, order: 'desc', sort:'dateCreated'])
         }
 
         if(jsonErrors.size() == 0){
@@ -674,10 +678,14 @@ class BookController {
         }
 
         tagList.each {
-            if(it?.book){
-                array.put(it?.book?.id, bookHelperService.getBookAsJson(it?.book))
+            def book = it?.book
+            if(book){
+                if(!book.isCompleted) {
+                    array.put(it?.book?.id, bookHelperService.getBookAsJson(it?.book))
+                }
             }
         }
+
         def books = []
         array.each {
             books.push(it?.getValue())

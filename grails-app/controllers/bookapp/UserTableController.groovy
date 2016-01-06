@@ -124,12 +124,9 @@ class UserTableController {
             }
 
             if(userold){
-                jsonObject.put("userToken", userold.userToken)
-                jsonObject.put("message", "User Already Registered")
-                jsonResponse.push(jsonObject)
+                jsonErrors.push("user already registered")
             }else {
                 UserTable user = new UserTable();
-				user.name = params.name
                 user.email = params.email;
                 user.userName = params.userName;
                 user.gcm = params.gcm;
@@ -137,14 +134,16 @@ class UserTableController {
                 String token = UserHelperService.nextId();
                 user.userToken = token;
                 if (user.save(flush: true, failOnError: true)) {
-                    jsonObject.put("userToken", token)
-                    jsonResponse.push(jsonObject)
+                    Map userMap = new HashMap()
+                    userMap.put("userToken", token)
+                    jsonResponse.push(userMap)
                     jsonStatus = true
                 } else {
-                    jsonResponse.push("error occured while saving user");
+                    jsonErrors.push("error occured while saving user");
                 }
             }
         }
+
         renderResponse()
     }
 
@@ -198,10 +197,6 @@ class UserTableController {
             }
         }
 
-		if(!params.name){
-            jsonErrors.push("Name is not found")
-        }
-		
         if(!params.userName){
             jsonErrors.push("user name not found")
         }
@@ -221,27 +216,26 @@ class UserTableController {
             }
 
             if(userold){
-                jsonObject.put("userToken", userold.userToken)
-                jsonObject.put("message", "User Already Registered")
-                jsonResponse.push(jsonObject)
+                jsonErrors.push("user already registered")
             }else {
                 UserTable user = new UserTable();
                 user.email = params.email;
-				user.name = params.name;
                 user.userName = params.userName;
                 user.gcm = params.gcm;
                 user.loginType = params.loginType
                 String token = UserHelperService.nextId();
                 user.userToken = token;
                 if (user.save(flush: true, failOnError: true)) {
-                    jsonObject.put("userToken", token)
-                    jsonResponse.push(jsonObject)
+                    Map userMap = new HashMap()
+                    userMap.put("userToken", token)
+                    jsonResponse.push(userMap)
                     jsonStatus = true
                 } else {
-                    jsonResponse.push("error occured while saving user");
+                    jsonErrors.push("error occured while saving user");
                 }
             }
         }
+
         renderResponse()
     }
 
