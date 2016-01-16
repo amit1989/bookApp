@@ -471,6 +471,7 @@ class BookController {
                 obj.put("response", responseObj)
                 render obj as JSON
             }else{
+                sendPushNotification(request.user.gcm, "confirmBookRequest", ""+book.user.name)
                 responseObj.put("message", "confirmed");
                 obj.put("status", "success")
                 obj.put("userDetail", request.user.userToken)
@@ -1045,6 +1046,23 @@ class BookController {
         }
     }
 
+    def contactUs (){
+
+        initiateJSONParameters()
+        ContactUs contactUs = new ContactUs(params)
+
+        try {
+            if(contactUs.save(flush:true, failOnError: true)) {
+                jsonResponse.push("Added")
+                jsonStatus = true
+            }
+
+        }catch (Exception e){
+            jsonErrors.push("Failed")
+        }
+        renderResponse()
+    }
+
     private void initiateJSONParameters(){
         jsonObject = new JSONObject()
         jsonErrors = new ArrayList()
@@ -1059,4 +1077,6 @@ class BookController {
         jsonObject.put("response", jsonResponse)
         render jsonObject as JSON
     }
+
+
 }

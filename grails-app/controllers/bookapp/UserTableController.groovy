@@ -216,7 +216,11 @@ class UserTableController {
             }
 
             if(userold){
-                jsonErrors.push("user already registered")
+                Map userMap = new HashMap()
+                userMap.put("userToken", userold.userToken)
+                jsonResponse.push(userMap)
+                jsonStatus = true
+
             }else {
                 UserTable user = new UserTable();
                 user.email = params.email;
@@ -236,6 +240,25 @@ class UserTableController {
             }
         }
 
+        renderResponse()
+    }
+
+    def getApiVersion(){
+
+        initiateJSONParameters()
+
+        try {
+
+            def version = AppApiVersion.findAll()
+
+            Map userMap = new HashMap()
+            userMap.put( "versionNumber",  version.get(0).versionName )
+            jsonResponse.push(userMap)
+            jsonStatus = true
+
+        }catch (Exception e){
+            jsonErrors.push("Failed")
+        }
         renderResponse()
     }
 
