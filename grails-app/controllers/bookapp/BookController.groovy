@@ -493,7 +493,7 @@ class BookController {
         JSONObject booksobject = new JSONObject()
         JSONArray array = new JSONArray()
 
-        def rec =  Book.executeQuery("select b.id, b.title, r.is_completed, r.requestToken, r.user.id, b.endDate, r.sharedDate from Book b ,Request r where b.id = r.book.id and b.id = :bookId", [bookId : Long.parseLong(params.bookId)]);
+        def rec =  Book.executeQuery("select b.id, b.title, r.is_completed, r.requestToken, r.user.id, b.endDate, r.sharedDate, r.user.name from Book b ,Request r where b.id = r.book.id and b.id = :bookId", [bookId : Long.parseLong(params.bookId)]);
 
         println rec
         for(int i=0; i < rec.size(); i++ ){
@@ -506,6 +506,7 @@ class BookController {
             jsonMap.put("userId", rec[i][4] )
             jsonMap.put("SharedDays", rec[i][5] )
             jsonMap.put("sharedOnDate", rec[i][6] )
+            jsonMap.put("name", rec[i][7] )
             array.putAt( i, jsonMap )
         }
         booksobject.put("books", array)
