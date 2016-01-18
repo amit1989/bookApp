@@ -145,7 +145,8 @@ class BookHelperService {
                 "shareCount"    : books?.shareCount ?: "",
                 "imageName"     : books?.imageUrl ?: "",
                 "userName"      : books?.user?.userName ?: "",
-                "userEmail"     : books?.user?.email ?: ""
+                "userEmail"     : books?.user?.email ?: "",
+                "name"          : books?.user?.name ?: ""
             ]
         }
         return jsonMap;
@@ -177,7 +178,9 @@ class BookHelperService {
                 "shareCount"    : books?.shareCount ?: "",
                 "imageName"     : books?.imageUrl ?: "",
                 "userName"      : books?.user?.userName ?: "",
-                "userEmail"     : books?.user?.email ?: ""
+                "userEmail"     : books?.user?.email ?: "",
+                "name"          : books?.user?.name ?: ""
+
             ]
         }
 
@@ -210,7 +213,7 @@ class BookHelperService {
         object.put("imageName", books?.imageUrl ?: "")
         object.put("userName", books?.user?.userName ?: "")
         object.put("userEmail", books?.user?.email ?: "")
-
+        object.put("name", books?.user?.name ?: "")
         return object;
     }
 }
