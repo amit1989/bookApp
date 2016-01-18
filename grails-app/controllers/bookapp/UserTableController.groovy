@@ -226,6 +226,7 @@ class UserTableController {
                 user.email = params.email;
                 user.userName = params.userName;
                 user.gcm = params.gcm;
+                user.name = params.name;
                 user.loginType = params.loginType
                 String token = UserHelperService.nextId();
                 user.userToken = token;
