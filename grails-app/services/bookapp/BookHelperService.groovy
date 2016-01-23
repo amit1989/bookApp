@@ -83,7 +83,7 @@ class BookHelperService {
             println("Payload Data ----->"+data)
             println("Registration Ids ----->"+registrationIds)
             //def gcmApiKey = grailsApplication.config.GCM_API_KEY
-            def gcmApiKey = "AIzaSyDjUJuSrQ9XgkIQFK6Ttmqm8EzR0DlqFQ0"
+            def gcmApiKey = "AIzaSyA9BWi2vUILOeoWPTbnvz6W_vfaFCiSKeA"
             println("GCM API Key ----->"+gcmApiKey)
             def outPut
             if(gcmApiKey && registrationIds && data) {
