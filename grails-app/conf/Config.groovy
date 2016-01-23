@@ -119,7 +119,7 @@ log4j = {
 }
 
 
-android.gcm.api.key = 'AIzaSyBlQmvDRpJwQT-1aXG5qQsqPZiil1KMuPk'
+android.gcm.api.key = 'AIzaSyA9BWi2vUILOeoWPTbnvz6W_vfaFCiSKeA'
 android.gcm.time.to.live=1419200
 android.gcm.delay.'while'.idle=false
 android.gcm.retries=3
