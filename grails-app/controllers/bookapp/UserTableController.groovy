@@ -216,6 +216,8 @@ class UserTableController {
             }
 
             if(userold){
+                userold.gcm = params.gcm
+                userold.save(failOnError: true)
                 Map userMap = new HashMap()
                 userMap.put("userToken", userold.userToken)
                 jsonResponse.push(userMap)
