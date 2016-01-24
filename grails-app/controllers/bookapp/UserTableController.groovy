@@ -223,6 +223,7 @@ class UserTableController {
                 jsonResponse.push(userMap)
                 jsonStatus = true
 
+
             }else {
                 UserTable user = new UserTable();
                 user.email = params.email;
