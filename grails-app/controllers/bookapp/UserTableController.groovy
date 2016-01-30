@@ -266,6 +266,26 @@ class UserTableController {
         renderResponse()
     }
 
+    @Transactional
+    def verifyMobileNumber(){
+        initiateJSONParameters()
+
+        try {
+            def user = UserTable.findByUserToken(params.token);
+            user.mobileNumber = params.mobileNum
+            user.verified = true
+            user.save(failOnError: true)
+
+            Map userMap = new HashMap()
+            jsonResponse.push(userMap)
+            jsonStatus = true
+
+        }catch (Exception e){
+            jsonErrors.push("Failed")
+        }
+        renderResponse()
+    }
+
     private void initiateJSONParameters(){
         jsonObject = new JSONObject()
         jsonErrors = new ArrayList()

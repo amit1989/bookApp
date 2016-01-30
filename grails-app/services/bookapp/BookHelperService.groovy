@@ -146,7 +146,8 @@ class BookHelperService {
                 "imageName"     : books?.imageUrl ?: "",
                 "userName"      : books?.user?.userName ?: "",
                 "userEmail"     : books?.user?.email ?: "",
-                "name"          : books?.user?.name ?: ""
+                "name"          : books?.user?.name ?: "",
+                "verified"      : books?.user?.verified ?: ""
             ]
         }
         return jsonMap;
@@ -179,8 +180,8 @@ class BookHelperService {
                 "imageName"     : books?.imageUrl ?: "",
                 "userName"      : books?.user?.userName ?: "",
                 "userEmail"     : books?.user?.email ?: "",
-                "name"          : books?.user?.name ?: ""
-
+                "name"          : books?.user?.name ?: "",
+                "verified"      : books?.user?.verified ?: ""
             ]
         }
 
@@ -214,6 +215,7 @@ class BookHelperService {
         object.put("userName", books?.user?.userName ?: "")
         object.put("userEmail", books?.user?.email ?: "")
         object.put("name", books?.user?.name ?: "")
+        object.put("verified", books?.user?.verified ?: "")
         return object;
     }
 }

@@ -8,6 +8,8 @@ class UserTable {
     String gcm;
     String status;
     String loginType;
+    String mobileNumber;
+    boolean verified;
 
     static constraints = {
 		name (nullable: true)
@@ -17,5 +19,11 @@ class UserTable {
         gcm(nullable: true)
         status(nullable: true)
         loginType(nullable: true)
+        mobileNumber(nullable: true)
+        verified(nullable: true)
+    }
+
+    static mapping = {
+        name verified: true
     }
 }
