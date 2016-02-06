@@ -972,26 +972,6 @@ class BookController {
         renderResponse()
     }//end of create_book
 
-    def validateBookFields(){
-        if(!params.title){
-            jsonErrors.push("book title cannot be empty")
-        }
-        if(params.token) {
-            def user = UserTable.findByUserToken(params.token)
-            if(user){
-                params.user = user
-            }else{
-                jsonErrors.push("No user exist with the provided token")
-            }
-        }else{
-            jsonErrors.push("token cannot be empty")
-        }
-
-        if(params.categoryId){
-            params.category = Category.findById(params.categoryId)
-        }
-    }
-
     /*
      * url to access
      * http://localhost:8080/bookApp/book/addCustomTag?bookId=8&tags=kdk&pickupId=
@@ -1086,6 +1066,36 @@ class BookController {
         if(jsonErrors.size() == 0){
             jsonStatus = true
             Book book = Book.findById(params.bookId)
+            if(params.title){
+                book.title = params.title
+            }
+            if(params.isbn){
+                book.isbn = params.isbn
+            }
+            if(params.discreption){
+                book.discreption = params.discreption
+            }
+            if(params.bookEdition){
+                book.bookEdition = params.bookEdition
+            }
+            if(params.yearOfBook){
+                book.yearOfBook = params.yearOfBook
+            }
+            if(params.author){
+                book.author = params.author
+            }
+            if(params.categoryId){
+                book.category = params.categoryId
+            }
+            if (params.discount){
+                book.discount = params.discount
+            }
+            if (params.originalCost){
+                book.originalCost = params.originalCost
+            }
+            if(params.endDate){
+                book.endDate = params.endDate
+            }
             UserTable user = params.user
             if(book.save(flush:true)){
                 if (params.image && request.getFile('image')) {
