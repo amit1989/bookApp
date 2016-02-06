@@ -1079,5 +1079,62 @@ class BookController {
         render jsonObject as JSON
     }
 
+    @Transactional
+    def edit_book(){
+        initiateJSONParameters()
+        validateBookFields()
+        if(jsonErrors.size() == 0){
+            jsonStatus = true
+            Book book = Book.findById(params.bookId)
+            UserTable user = params.user
+            if(book.save(flush:true)){
+                if (params.image && request.getFile('image')) {
+                    try {
+                        def uploadedFile = request.getFile('image')
+                        def webRootDir = servletContext.getRealPath("/")
+                        def userDir = new File(webRootDir, "/images/books")
+                        userDir.mkdirs()
+                        String fileName = Book.getTimeStamp() + user.userToken + ".jpg"
+                        uploadedFile.transferTo(new File(userDir, fileName))
+                        book.imageUrl = fileName
+                        book.save(flush:true)
+                    }catch(Exception e){
+                        jsonErrors.push("Error occured while saving book image" + e.printStackTrace())
+                    }
+                }
+                jsonStatus = true
+                Map bookMap = new HashMap()
+                bookMap.put("bookId", book.getId())
+                jsonResponse.push(bookMap)
+            }
+        }
+        renderResponse()
+    }//end of create_book
 
+
+    @Transactional
+    def edit_book_address(){
+
+        JSONObject obj = new JSONObject();
+        JSONObject responseObj = new JSONObject();
+        try{
+            def bookId = Book.findById(params.bookId)
+            PickupLocation address = PickupLocation.findByBook(bookId)
+            if(address.save( flush:true, failOnError: true )){
+
+                responseObj.put("pickupId", address.id );
+                responseObj.put("message", "Adress Confirmed");
+                obj.put("success", responseObj)
+                render obj as JSON
+            }
+
+        }catch (Exception e){
+            e.printStackTrace()
+            responseObj.put("message", "failed to Add Address");
+            responseObj.put("exception", e.getMessage());
+            obj.put("error", responseObj)
+            render obj as JSON
+        }
+
+    }
 }
