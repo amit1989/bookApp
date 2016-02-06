@@ -940,6 +940,26 @@ class BookController {
     /* url to access
      * http://localhost:8080/bookApp/book/create_book?title=History&token=12125244
      */
+    def validateBookFields(){
+        if(!params.title){
+            jsonErrors.push("book title cannot be empty")
+        }
+        if(params.token) {
+            def user = UserTable.findByUserToken(params.token)
+            if(user){
+                params.user = user
+            }else{
+                jsonErrors.push("No user exist with the provided token")
+            }
+        }else{
+            jsonErrors.push("token cannot be empty")
+        }
+
+        if(params.categoryId){
+            params.category = Category.findById(params.categoryId)
+        }
+    }
+
     @Transactional
     def create_book(){
         initiateJSONParameters()
@@ -1059,6 +1079,7 @@ class BookController {
         render jsonObject as JSON
     }
 
+
     @Transactional
     def edit_book(){
         initiateJSONParameters()
@@ -1119,7 +1140,7 @@ class BookController {
             }
         }
         renderResponse()
-    }//end of create_book
+    }//end
 
 
     @Transactional
