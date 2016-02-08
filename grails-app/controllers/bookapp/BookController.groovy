@@ -1106,7 +1106,7 @@ class BookController {
                 book.author = params.author
             }
             if(params.categoryId){
-                book.category = params.categoryId
+                book.category = Category.findById(params.categoryId)
             }
             if (params.discount){
                 book.discount = params.discount
