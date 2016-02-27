@@ -1,4 +1,4 @@
-package bookapp
+    package bookapp
 
 import grails.converters.JSON
 import org.json.simple.JSONArray
@@ -890,7 +890,6 @@ class BookController {
                     println "categories: " +categories
                     bookList = Book.findAllByCategoryInListAndIdInList(categories, locations?.book?.id)
                 }else if(params.searchSting){
-
                     bookList = Book.findAllByTitleIlikeAndIdInList("%"+params.searchSting+"%", locations?.book?.id );
 
                 } else {

@@ -65,6 +65,12 @@ class BookHelperService {
                 messages['Message'] = details+" : has shown interest in your book. "
             }
 
+            if (requestType.equals("notifyAllUser")){
+                messages['status'] = "notifyAllUser"
+                messages['url'] = "notifyAllUser"
+                messages['message'] = "notifyAllUser"
+            }
+
             if(requestType.equals("confirmBookRequest")){
                 messages['Message'] = details
                 messages['status'] = "confirmBookRequest"
