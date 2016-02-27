@@ -410,7 +410,7 @@ class BookController {
             request.is_completed = false;
             request.book = bookId;
             request.user = user;
-            request.requestToken = user.email
+            request.requestToken = bookHelperService.generateRequestToken();
 
 
             if(request.save(flush: true,  failOnError: true)){
@@ -872,6 +872,7 @@ class BookController {
         boolean isParamsFound = false
         def bookList
 
+
         if(params.category){
             isParamsFound = true
             def categories = Category.findAllByName(params.category)
@@ -888,7 +889,11 @@ class BookController {
                     def categories = Category.findAllByName(params.category)
                     println "categories: " +categories
                     bookList = Book.findAllByCategoryInListAndIdInList(categories, locations?.book?.id)
-                }else {
+                }else if(params.searchSting){
+
+                    bookList = Book.findAllByTitleIlikeAndIdInList("%"+params.searchSting+"%", locations?.book?.id );
+
+                } else {
                     bookList = Book.findAllByIdInList(locations?.book?.id)
                 }
             }else{
@@ -1151,6 +1156,22 @@ class BookController {
         try{
             def bookId = Book.findById(params.bookId)
             PickupLocation address = PickupLocation.findByBook(bookId)
+
+
+            if(params.addressOne){
+                address.addressOne = params.addressOne
+            }else if(params.addressTwo){
+                address.addressTwo = params.addressTwo
+            }else if(params.city){
+                address.city = params.city
+            }else if(params.latitude){
+                address.latitude = params.latitude
+            }else if (params.longitude){
+                address.longitude = params.longitude
+            }else if (params.mobileNumber){
+                address.mobileNumber = params.mobileNumber
+            }
+
             if(address.save( flush:true, failOnError: true )){
 
                 responseObj.put("pickupId", address.id );
