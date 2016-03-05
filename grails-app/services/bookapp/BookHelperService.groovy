@@ -27,6 +27,22 @@ class BookHelperService {
     }
 
 
+    def boolean notifyAllUser(String url, String message){
+
+        def userGCM = []
+        Map messages = [:]
+
+        userGCM = UserTable.findAllByGcmIsNotNull();
+
+
+            messages['status'] = "notifyAllUser"
+            messages['url'] = "notifyAllUser"
+            messages['message'] = "notifyAllUser"
+
+
+
+        return sendAndroidNotification( messages, userGCM, "")
+    }
 
     def boolean prepareAndroidNotification(String regId, String requestType, String details){
         try{
@@ -65,11 +81,7 @@ class BookHelperService {
                 messages['Message'] = details+" : has shown interest in your book. "
             }
 
-            if (requestType.equals("notifyAllUser")){
-                messages['status'] = "notifyAllUser"
-                messages['url'] = "notifyAllUser"
-                messages['message'] = "notifyAllUser"
-            }
+
 
             if(requestType.equals("confirmBookRequest")){
                 messages['Message'] = details
@@ -229,5 +241,27 @@ class BookHelperService {
         object.put("name", books?.user?.name ?: "")
         object.put("verified", books?.user?.verified ?: "")
         return object;
+    }
+
+    public HashMap getTutorHasMap(def tutorList){
+        HashMap jsonMap = new HashMap()
+        jsonMap.books = tutorList.collect { tutors ->
+            return [
+                    "id"            : tutors?.id ?: "",
+                    "image_url"     : tutors?.imageUrl ?: "",
+                    "averageRating"     : tutors?.averageRating ?: "",
+                    "details"         : tutors?.details ?: "",
+                    "cources"        : tutors?.cources ?: "",
+                    "instituteName"     : tutors?.instituteName ?: "",
+                    "category"      : tutors?.category?.name ?: "",
+                    "dateCreated"   : tutors?.dateCreated ? new SimpleDateFormat("dd/MM/yyyy hh:MM:ss").format(tutors.dateCreated) : "",
+                    "imageName"     : tutors?.imageUrl ?: "",
+                    "userName"      : tutors?.user?.userName ?: "",
+                    "userEmail"     : tutors?.user?.email ?: "",
+                    "name"          : tutors?.user?.name ?: "",
+                    "verified"      : tutors?.user?.verified ?: ""
+            ]
+        }
+        return jsonMap;
     }
 }
