@@ -1,0 +1,16 @@
+@SpringBootApplication(scanBasePackages={"com.hiaServer"})
+@ComponentScan({"com.hiaServer"})
+@EntityScan("com.hiaServer")
+@EnableJpaRepositories("com.hiaServer")
+public class HiaServApplication extends SpringBootServletInitializer {
+
+	
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+		return application.sources(HiaServApplication.class);
+	}
+	
+	public static void main(String[] args) {
+		SpringApplication.run(HiaServApplication.class, args);
+	}
+}
