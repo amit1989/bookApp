@@ -514,3 +514,358 @@ public class City {
 	
 }
 //==
+
+
+package com.hiaServer.user;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.validation.constraints.NotNull;
+
+import org.hibernate.validator.constraints.NotEmpty;
+
+@Entity
+public class AppUser {
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	Long id;
+	
+	String emailIdc;
+	
+	String emailIdP;
+	
+	String token;
+	
+	String userName;
+	
+	String user_img;
+	
+	String user_lat;
+	
+	String user_lng;
+	
+	String resume_src;
+	
+	String appId;
+	
+	String password;
+	
+	
+	/*
+	 * emailidc
+	 * emaildp
+	 * token
+	 * it_park_it*
+	 * area_id*
+	 * user_img
+	 * user_lat
+	 * user_lng
+	 * resume_src
+	 * 
+	 */
+	String emailId;
+	
+
+	
+	public AppUser() {}
+
+
+
+	public Long getId() {
+		return id;
+	}
+
+
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+
+
+	public String getEmailIdc() {
+		return emailIdc;
+	}
+
+
+
+	public void setEmailIdc(String emailIdc) {
+		this.emailIdc = emailIdc;
+	}
+
+
+
+	public String getEmailIdP() {
+		return emailIdP;
+	}
+
+
+
+	public void setEmailIdP(String emailIdP) {
+		this.emailIdP = emailIdP;
+	}
+
+
+
+	public String getToken() {
+		return token;
+	}
+
+
+
+	public void setToken(String token) {
+		this.token = token;
+	}
+
+
+
+	public String getUserName() {
+		return userName;
+	}
+
+
+
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+
+
+
+	public String getUser_img() {
+		return user_img;
+	}
+
+
+
+	public void setUser_img(String user_img) {
+		this.user_img = user_img;
+	}
+
+
+
+	public String getUser_lat() {
+		return user_lat;
+	}
+
+
+
+	public void setUser_lat(String user_lat) {
+		this.user_lat = user_lat;
+	}
+
+
+
+	public String getUser_lng() {
+		return user_lng;
+	}
+
+
+
+	public void setUser_lng(String user_lng) {
+		this.user_lng = user_lng;
+	}
+
+
+
+	public String getResume_src() {
+		return resume_src;
+	}
+
+
+
+	public void setResume_src(String resume_src) {
+		this.resume_src = resume_src;
+	}
+
+
+
+	public String getAppId() {
+		return appId;
+	}
+
+
+
+	public void setAppId(String appId) {
+		this.appId = appId;
+	}
+
+
+
+	public String getPassword() {
+		return password;
+	}
+
+
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+
+
+	public String getEmailId() {
+		return emailId;
+	}
+
+
+
+	public void setEmailId(String emailId) {
+		this.emailId = emailId;
+	}
+
+
+
+	public AppUser(Long id, String emailIdc, String emailIdP, String token, String userName, String user_img,
+			String user_lat, String user_lng, String resume_src, String appId, String password, String emailId) {
+		super();
+		this.id = id;
+		this.emailIdc = emailIdc;
+		this.emailIdP = emailIdP;
+		this.token = token;
+		this.userName = userName;
+		this.user_img = user_img;
+		this.user_lat = user_lat;
+		this.user_lng = user_lng;
+		this.resume_src = resume_src;
+		this.appId = appId;
+		this.password = password;
+		this.emailId = emailId;
+	}
+
+
+	
+	
+}
+//==
+package com.hiaServer.user;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.config.ResourceNotFoundException;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.hiaServer.hiaServ.Response;
+
+@RestController
+public class UserController {
+
+	@Autowired
+	UserService userService;
+
+	@RequestMapping(method = RequestMethod.POST, value="/users"  )
+	public Response addUser(@RequestBody @Valid  AppUser user) {
+	    	
+		AppUser user1 = userService.createUser(user);
+		return new Response(user1.token);
+		 
+	}
+	
+	@RequestMapping(method = RequestMethod.GET, value="/users"  )
+	public List<AppUser> addUser1() {
+		return userService.getAllUser();
+	}
+	
+	@RequestMapping(method = RequestMethod.GET, value="/users/{paramId}")
+	public AppUser getUser(@PathVariable Long paramId) {	
+		return  userService.getUser(paramId);
+	}
+	
+	@RequestMapping(method = RequestMethod.PUT, value="/users"  )
+	public void updateUser(@RequestBody @Valid  AppUser user) {
+		userService.createUser(user);
+	}
+	
+	
+	@RequestMapping(method = RequestMethod.GET, value="/app-login/{email}/{password}"  )
+	public List<AppUser> appLogin(@PathVariable Long email, @PathVariable Long password) {
+		
+		
+		return userService.getAllUser();
+	}
+	
+}
+//==
+
+package com.hiaServer.user;
+
+import org.springframework.data.repository.CrudRepository;
+
+
+
+public interface UserRepo extends CrudRepository<AppUser, Long> {
+	
+	public AppUser findByEmailId(String email);
+	
+//	   List<Article> findByTitle(String title);
+//	    List<Article> findDistinctByCategory(String category);
+//	    List<Article> findByTitleAndCategory(String title, String category);
+//
+//	    @Query("SELECT a FROM Article a WHERE a.title=:title and a.category=:category")
+//	    List<Article> fetchArticles(@Param("title") String title, @Param("category") String category);
+	
+}
+//===
+
+package com.hiaServer.user;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+
+@Service
+public class UserService {
+
+	@Autowired
+	UserRepo userRepo;
+	
+	public AppUser  createUser(AppUser user) {
+		
+		if(!isUserExists(user.emailId)) {
+			user.token = genrateUID();
+		}
+	    
+		return  userRepo.save(user);
+	}
+	
+	public boolean isUserExists(String emailId) {
+		
+		AppUser user = userRepo.findByEmailId(emailId);
+		if(user!=null) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public List<AppUser> getAllUser() {
+		List<AppUser> list = new ArrayList<>();
+		userRepo.findAll().forEach(list::add);
+		return list;
+	}
+	
+	public AppUser getUser(Long id) {
+		return  userRepo.findOne(id);
+	}
+	
+	public String genrateUID() {
+		UUID idOne = UUID.randomUUID();
+		return idOne.toString();
+	}
+}
+//==
